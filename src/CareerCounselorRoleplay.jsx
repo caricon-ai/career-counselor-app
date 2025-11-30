@@ -121,13 +121,12 @@ const CareerCounselorRoleplay = () => {
   const generateClientResponse = async (counselorMessage, conversationHistory) => {
     setIsLoading(true);
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
           max_tokens: 1000,
           messages: [
             {
@@ -169,13 +168,12 @@ ${counselorMessage}
   const evaluateSession = async (conversationHistory) => {
     setIsLoading(true);
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
           max_tokens: 2000,
           messages: [
             {
