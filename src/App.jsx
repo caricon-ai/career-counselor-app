@@ -8,7 +8,7 @@ import Header from "./components/Header";
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Header />
 
       <Routes>
@@ -18,6 +18,6 @@ export default function App() {
         <Route path="/result" element={<Result />} />
         <Route path="/transcript" element={<Transcript />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
