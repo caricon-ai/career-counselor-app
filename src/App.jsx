@@ -1,3 +1,4 @@
+// src/App.jsx
 import { HashRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Scenario from "./pages/Scenario";
