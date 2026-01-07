@@ -1,4 +1,3 @@
-import ScenarioSelector from './components/ScenarioSelector';
 import { useState } from 'react';
 import { Play, Clock, Users, TrendingUp, Target, ArrowLeft, Sparkles } from 'lucide-react';
 
