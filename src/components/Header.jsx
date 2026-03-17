@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 
-
-
-export default function Header({ rightContent }) {
+export default function Header({ rightContent, session }) {
   const navigate = useNavigate();
   const location = useLocation();
 const isHome = location.pathname === "/";
@@ -31,36 +30,45 @@ const isHome = location.pathname === "/";
       </div>
 
       {/* 右：任意ボタン or デフォルト */}
-      <div>
-  {!isHome && (
-    rightContent ? (
-      rightContent
-    ) : (
-      <button
-        onClick={() => navigate("/")}
-        onMouseEnter={() => setHoverTop(true)}
-        onMouseLeave={() => setHoverTop(false)}
-        style={{
-          background: hoverTop ? "#1d4ed8" : "#2563eb",
-          border: "none",
-          color: "#fff",
-          padding: "6px 14px",
-          borderRadius: 8,
-          fontSize: 13,
-          fontWeight: "bold",
-          cursor: "pointer",
-          transition: "all 0.2s ease",
-          transform: hoverTop ? "translateY(-1px)" : "none",
-          boxShadow: hoverTop
-            ? "0 4px 10px rgba(37,99,235,0.35)"
-            : "none",
-        }}
-      >
-        トップへ戻る
-      </button>
-    )
-  )}
-</div>
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        {!isHome && (
+          rightContent ? rightContent : (
+            <button
+              onClick={() => navigate("/")}
+              onMouseEnter={() => setHoverTop(true)}
+              onMouseLeave={() => setHoverTop(false)}
+              style={{
+                background: hoverTop ? "#1d4ed8" : "#2563eb",
+                border: "none",
+                color: "#fff",
+                padding: "6px 14px",
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              トップへ戻る
+            </button>
+          )
+        )}
+        {session && (
+          <button
+            onClick={() => supabase.auth.signOut()}
+            style={{
+              background: "transparent",
+              border: "1px solid #6b7280",
+              color: "#d1d5db",
+              padding: "6px 14px",
+              borderRadius: 8,
+              fontSize: 13,
+              cursor: "pointer",
+            }}
+          >
+            ログアウト
+          </button>
+        )}
+      </div>
 
     </header>
   );
