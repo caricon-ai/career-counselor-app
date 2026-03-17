@@ -6,11 +6,13 @@ import RolePlay from "./pages/RolePlay";
 import Result from "./pages/Result";
 import Login from "./pages/Login";
 import LegalPage from "./pages/LegalPage";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Terms from "./pages/Terms";
 import Header from "./components/Header";
 import { supabase } from "./lib/supabase";
 
 // ログイン不要で見られるページ
-const PUBLIC_PATHS = ["/", "/legal"];
+const PUBLIC_PATHS = ["/", "/legal", "/privacy", "/terms"];
 
 export default function App() {
   const [session, setSession] = useState(undefined);
@@ -52,6 +54,8 @@ export default function App() {
         {/* 公開ページ */}
         <Route path="/" element={<Home />} />
         <Route path="/legal" element={<LegalPage />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<Terms />} />
 
         {/* ログイン必須ページ */}
         <Route path="/scenario" element={session ? <Scenario /> : <Login />} />

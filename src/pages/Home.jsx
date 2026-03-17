@@ -79,9 +79,15 @@ export default function Home() {
 
       </main>
 
-      <footer style={{ textAlign: "center", padding: "20px", fontSize: 13, color: "#9ca3af" }}>
+      <footer style={{ textAlign: "center", padding: "20px", fontSize: 13, color: "#9ca3af", display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap" }}>
         <Link to="/legal" style={{ color: "#6b7280", textDecoration: "underline" }}>
           特定商取引法に基づく表記
+        </Link>
+        <Link to="/privacy" style={{ color: "#6b7280", textDecoration: "underline" }}>
+          プライバシーポリシー
+        </Link>
+        <Link to="/terms" style={{ color: "#6b7280", textDecoration: "underline" }}>
+          利用規約
         </Link>
       </footer>
     </div>
