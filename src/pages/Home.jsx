@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
 
 import Header from "../components/Header";
@@ -78,6 +78,12 @@ export default function Home() {
 </button>
 
       </main>
+
+      <footer style={{ textAlign: "center", padding: "20px", fontSize: 13, color: "#9ca3af" }}>
+        <Link to="/legal" style={{ color: "#6b7280", textDecoration: "underline" }}>
+          特定商取引法に基づく表記
+        </Link>
+      </footer>
     </div>
   );
 }
