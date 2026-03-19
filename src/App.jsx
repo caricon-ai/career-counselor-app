@@ -19,7 +19,8 @@ const PUBLIC_PATHS = ["/", "/legal", "/privacy", "/terms", "/payment", "/payment
 export default function App() {
   const [session, setSession] = useState(undefined);
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [checkingSubscription, setCheckingSubscription] = useState(false);
+  // 最初からtrueにして、確認完了まで必ずローディングを表示する
+  const [checkingSubscription, setCheckingSubscription] = useState(true);
   const location = useLocation();
 
   useEffect(() => {
@@ -36,13 +37,18 @@ export default function App() {
 
   // ログイン済みのときにサブスクリプション状態を確認
   useEffect(() => {
+    // sessionがまだ確認中（undefined）の場合は何もしない
+    if (session === undefined) return;
+
+    // 未ログインの場合
     if (!session) {
       setIsSubscribed(false);
+      setCheckingSubscription(false);
       return;
     }
 
+    // ログイン済みの場合、サブスクリプションを確認
     const checkSubscription = async () => {
-      setCheckingSubscription(true);
       const { data } = await supabase
         .from("subscriptions")
         .select("status")
