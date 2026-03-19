@@ -56,17 +56,49 @@ export default function App() {
       return;
     }
 
+    // ログイン連続日数を更新する関数
+    // 今日初めてのアクセスかどうかを判定してストリークを更新する
+    const updateLoginStreak = async (userId, currentProfile) => {
+      if (!currentProfile) return currentProfile;
+
+      const today = new Date().toISOString().slice(0, 10); // "2026-03-20" 形式
+      const lastDate = currentProfile.last_login_date;
+
+      // 今日すでにアクセス済みなら何もしない
+      if (lastDate === today) return currentProfile;
+
+      // 昨日かどうかを計算
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
+      // 昨日ログインしていれば+1、それ以外はリセット
+      const newStreak = lastDate === yesterdayStr
+        ? (currentProfile.login_streak || 1) + 1
+        : 1;
+
+      const { data } = await supabase
+        .from("profiles")
+        .update({ login_streak: newStreak, last_login_date: today })
+        .eq("id", userId)
+        .select("username, exam_period, login_streak, last_login_date")
+        .maybeSingle();
+
+      return data || currentProfile;
+    };
+
     // オーナーは常にアクセス可能（プロフィールは確認する）
     const OWNER_EMAILS = ["kasane1101@gmail.com"];
     if (OWNER_EMAILS.includes(session.user.email)) {
       setIsSubscribed(true);
       supabase
         .from("profiles")
-        .select("username, exam_period")
+        .select("username, exam_period, login_streak, last_login_date")
         .eq("id", session.user.id)
         .maybeSingle()
-        .then(({ data }) => {
-          setProfile(data || false);
+        .then(async ({ data }) => {
+          const updated = await updateLoginStreak(session.user.id, data);
+          setProfile(updated || false);
           setCheckingSubscription(false);
         });
       return;
@@ -83,14 +115,16 @@ export default function App() {
           .maybeSingle(),
         supabase
           .from("profiles")
-          .select("username, exam_period")
+          .select("username, exam_period, login_streak, last_login_date")
           .eq("id", session.user.id)
           .maybeSingle(),
       ]);
 
       if (subResult.error) console.error("サブスクリプション確認エラー:", subResult.error);
       setIsSubscribed(subResult.data?.status === "active");
-      setProfile(profileResult.data || false);
+
+      const updated = await updateLoginStreak(session.user.id, profileResult.data);
+      setProfile(updated || false);
       setCheckingSubscription(false);
     };
 
@@ -146,7 +180,7 @@ export default function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* ログイン＋サブスクリプション必須ページ */}
-        <Route path="/scenario" element={session ? <Scenario username={profile?.username} /> : <Login />} />
+        <Route path="/scenario" element={session ? <Scenario username={profile?.username} loginStreak={profile?.login_streak} /> : <Login />} />
         <Route path="/roleplay" element={session ? <RolePlay /> : <Login />} />
         <Route path="/result" element={session ? <Result /> : <Login />} />
 

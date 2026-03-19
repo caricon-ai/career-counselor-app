@@ -33,16 +33,19 @@ export default function ProfileSetup({ userId, onComplete }) {
     setError("");
 
     try {
-      // Supabaseのprofilesテーブルにデータを保存する
+      // Supabaseのprofilesテーブルにデータを保存する（初回なのでストリーク=1・今日の日付を記録）
+      const today = new Date().toISOString().slice(0, 10);
       const { error } = await supabase.from("profiles").insert({
         id: userId,
         username: username.trim(),
         exam_period: examPeriod || null,
+        login_streak: 1,
+        last_login_date: today,
       });
       if (error) throw error;
 
       // 完了したら親コンポーネントに通知（App.jsxがプロフィールを再読み込みする）
-      onComplete({ username: username.trim(), exam_period: examPeriod || null });
+      onComplete({ username: username.trim(), exam_period: examPeriod || null, login_streak: 1, last_login_date: today });
     } catch (err) {
       setError("保存に失敗しました。もう一度お試しください。");
     } finally {

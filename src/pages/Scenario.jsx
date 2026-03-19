@@ -4,7 +4,7 @@ import { useState } from "react";
 import { scenarios } from "../data/scenarios";
 
 
-export default function Scenario({ username }) {
+export default function Scenario({ username, loginStreak }) {
   const navigate = useNavigate();
   const [hoverId, setHoverId] = useState(null);
 
@@ -17,11 +17,18 @@ export default function Scenario({ username }) {
         padding: "40px 20px",
       }}
     >
-      {/* ユーザー名がある場合は挨拶を表示 */}
+      {/* ユーザー名がある場合は挨拶とストリークを表示 */}
       {username && (
-        <p style={{ fontSize: 15, color: "#2563eb", marginBottom: 8, fontWeight: "bold" }}>
-          {username}さん、今日もがんばりましょう！
-        </p>
+        <div style={{ marginBottom: 20 }}>
+          <p style={{ fontSize: 15, color: "#2563eb", fontWeight: "bold", margin: "0 0 6px" }}>
+            {username}さん、今日も面談力を磨きましょう。
+          </p>
+          {loginStreak >= 1 && (
+            <p style={{ fontSize: 13, color: "#ea580c", margin: 0, fontWeight: "bold" }}>
+              🔥 {loginStreak}日連続継続中！
+            </p>
+          )}
+        </div>
       )}
       <h1
         style={{
