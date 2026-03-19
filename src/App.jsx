@@ -12,6 +12,7 @@ import Payment from "./pages/Payment";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import ResetPassword from "./pages/ResetPassword";
 import ProfileSetup from "./pages/ProfileSetup";
+import ProfileEdit from "./pages/ProfileEdit";
 import Header from "./components/Header";
 import { supabase } from "./lib/supabase";
 
@@ -181,6 +182,7 @@ export default function App() {
 
         {/* ログイン＋サブスクリプション必須ページ */}
         <Route path="/scenario" element={session ? <Scenario username={profile?.username} loginStreak={profile?.login_streak} /> : <Login />} />
+        <Route path="/profile-edit" element={session ? <ProfileEdit profile={profile} userId={session.user.id} onUpdate={(p) => setProfile(p)} /> : <Login />} />
         <Route path="/roleplay" element={session ? <RolePlay /> : <Login />} />
         <Route path="/result" element={session ? <Result /> : <Login />} />
 

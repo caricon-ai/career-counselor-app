@@ -75,13 +75,23 @@ export default function Header({ rightContent, session, username }) {
           </button>
         )}
 
-        {/* ログイン済みの場合：ユーザー名 + ログアウトボタン */}
+        {/* ログイン済みの場合：ユーザー名 + 編集 + ログアウトボタン */}
         {session && (
           <>
             {username && (
-              <span style={{ fontSize: 13, color: "#d1d5db" }}>
+              <button
+                onClick={() => navigate("/profile-edit")}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#d1d5db",
+                  fontSize: 13,
+                  cursor: "pointer",
+                  padding: "6px 4px",
+                }}
+              >
                 {username}さん
-              </span>
+              </button>
             )}
             <button
               onClick={() => supabase.auth.signOut()}
