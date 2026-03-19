@@ -5,13 +5,14 @@ import { useNavigate } from "react-router-dom";
 export default function PaymentSuccess() {
   const navigate = useNavigate();
 
-  // 3秒後にホームへ自動移動
+  // 3秒後に /scenario へ移動（window.location で完全リロード）
+  // navigate() だと isSubscribed が更新されないため、強制リロードが必要
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigate("/scenario");
+      window.location.href = "/scenario";
     }, 3000);
     return () => clearTimeout(timer);
-  }, [navigate]);
+  }, []);
 
   return (
     <div style={styles.container}>
@@ -23,7 +24,7 @@ export default function PaymentSuccess() {
           キャリコン実技試験対策AIをご利用いただけます。
         </p>
         <p style={styles.redirect}>3秒後に自動的に移動します...</p>
-        <button onClick={() => navigate("/scenario")} style={styles.button}>
+        <button onClick={() => { window.location.href = "/scenario"; }} style={styles.button}>
           今すぐ練習を始める
         </button>
       </div>
