@@ -78,21 +78,19 @@ export default function Header({ rightContent, session, username }) {
         {/* ログイン済みの場合：ユーザー名 + 編集 + ログアウトボタン */}
         {session && (
           <>
-            {username && (
-              <button
-                onClick={() => navigate("/profile-edit")}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#d1d5db",
-                  fontSize: 13,
-                  cursor: "pointer",
-                  padding: "6px 4px",
-                }}
-              >
-                {username}さん
-              </button>
-            )}
+            <button
+              onClick={() => navigate("/profile-edit")}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#d1d5db",
+                fontSize: 13,
+                cursor: "pointer",
+                padding: "6px 4px",
+              }}
+            >
+              {username ? `${username}さん` : "プロフィール設定"}
+            </button>
             <button
               onClick={() => supabase.auth.signOut()}
               style={{
