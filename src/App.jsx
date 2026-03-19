@@ -47,15 +47,24 @@ export default function App() {
       return;
     }
 
+    // オーナーは常にアクセス可能
+    const OWNER_EMAILS = ["kasane1101@gmail.com"];
+    if (OWNER_EMAILS.includes(session.user.email)) {
+      setIsSubscribed(true);
+      setCheckingSubscription(false);
+      return;
+    }
+
     // ログイン済みの場合、サブスクリプションを確認
     const checkSubscription = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("subscriptions")
         .select("status")
         .eq("user_id", session.user.id)
         .limit(1)
         .maybeSingle();
 
+      if (error) console.error("サブスクリプション確認エラー:", error);
       setIsSubscribed(data?.status === "active");
       setCheckingSubscription(false);
     };
