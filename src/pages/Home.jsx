@@ -47,50 +47,60 @@ export default function Home() {
         </p>
 
         {/* CTAボタン */}
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
-          <button
-            onClick={() => navigate("/scenario")}
-            onMouseEnter={() => setHoverStart(true)}
-            onMouseLeave={() => setHoverStart(false)}
-            style={{
-              background: hoverStart ? "#1d4ed8" : "#2563eb",
-              color: "#fff",
-              border: "none",
-              padding: "14px 32px",
-              fontSize: 16,
-              borderRadius: 12,
-              fontWeight: "bold",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-              transform: hoverStart ? "translateY(-2px)" : "none",
-              boxShadow: hoverStart ? "0 6px 14px rgba(37,99,235,0.35)" : "none",
-            }}
-          >
-            無料で試してみる
-          </button>
-          <button
-            onClick={() => navigate("/scenario")}
-            onMouseEnter={() => setHoverLogin(true)}
-            onMouseLeave={() => setHoverLogin(false)}
-            style={{
-              background: "#fff",
-              color: "#374151",
-              border: "1px solid #d1d5db",
-              padding: "14px 32px",
-              fontSize: 16,
-              borderRadius: 12,
-              fontWeight: "bold",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-              background: hoverLogin ? "#f9fafb" : "#fff",
-            }}
-          >
-            ログインして続ける
-          </button>
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center" }}>
+          {/* 新規ユーザー向け */}
+          <div style={{ textAlign: "center" }}>
+            <button
+              onClick={() => navigate("/scenario?mode=signup")}
+              onMouseEnter={() => setHoverStart(true)}
+              onMouseLeave={() => setHoverStart(false)}
+              style={{
+                background: hoverStart ? "#1d4ed8" : "#2563eb",
+                color: "#fff",
+                border: "none",
+                padding: "14px 32px",
+                fontSize: 16,
+                borderRadius: 12,
+                fontWeight: "bold",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                transform: hoverStart ? "translateY(-2px)" : "none",
+                boxShadow: hoverStart ? "0 6px 14px rgba(37,99,235,0.35)" : "none",
+                display: "block",
+              }}
+            >
+              新規登録・お申し込み
+            </button>
+            <p style={{ marginTop: 6, fontSize: 12, color: "#9ca3af" }}>はじめてご利用の方</p>
+          </div>
+
+          {/* 既存ユーザー向け */}
+          <div style={{ textAlign: "center" }}>
+            <button
+              onClick={() => navigate("/scenario")}
+              onMouseEnter={() => setHoverLogin(true)}
+              onMouseLeave={() => setHoverLogin(false)}
+              style={{
+                background: hoverLogin ? "#f9fafb" : "#fff",
+                color: "#374151",
+                border: "1px solid #d1d5db",
+                padding: "14px 32px",
+                fontSize: 16,
+                borderRadius: 12,
+                fontWeight: "bold",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                display: "block",
+              }}
+            >
+              ログイン
+            </button>
+            <p style={{ marginTop: 6, fontSize: 12, color: "#9ca3af" }}>すでに会員の方</p>
+          </div>
         </div>
 
         {/* 料金ヒント */}
-        <p style={{ marginTop: 16, fontSize: 13, color: "#9ca3af" }}>
+        <p style={{ marginTop: 20, fontSize: 13, color: "#9ca3af" }}>
           月額5,000円（税込）・いつでも解約可能
         </p>
       </section>
