@@ -4,7 +4,7 @@ import { useState } from "react";
 import { scenarios } from "../data/scenarios";
 
 
-export default function Scenario() {
+export default function Scenario({ username }) {
   const navigate = useNavigate();
   const [hoverId, setHoverId] = useState(null);
 
@@ -17,6 +17,12 @@ export default function Scenario() {
         padding: "40px 20px",
       }}
     >
+      {/* ユーザー名がある場合は挨拶を表示 */}
+      {username && (
+        <p style={{ fontSize: 15, color: "#2563eb", marginBottom: 8, fontWeight: "bold" }}>
+          {username}さん、今日もがんばりましょう！
+        </p>
+      )}
       <h1
         style={{
           fontSize: 24,

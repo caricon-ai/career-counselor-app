@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
-export default function Header({ rightContent, session }) {
+export default function Header({ rightContent, session, username }) {
   const navigate = useNavigate();
   const location = useLocation();
   const isHome = location.pathname === "/";
@@ -75,22 +75,29 @@ export default function Header({ rightContent, session }) {
           </button>
         )}
 
-        {/* ログイン済みの場合：ログアウトボタン */}
+        {/* ログイン済みの場合：ユーザー名 + ログアウトボタン */}
         {session && (
-          <button
-            onClick={() => supabase.auth.signOut()}
-            style={{
-              background: "transparent",
-              border: "1px solid #6b7280",
-              color: "#d1d5db",
-              padding: "6px 16px",
-              borderRadius: 8,
-              fontSize: 13,
-              cursor: "pointer",
-            }}
-          >
-            ログアウト
-          </button>
+          <>
+            {username && (
+              <span style={{ fontSize: 13, color: "#d1d5db" }}>
+                {username}さん
+              </span>
+            )}
+            <button
+              onClick={() => supabase.auth.signOut()}
+              style={{
+                background: "transparent",
+                border: "1px solid #6b7280",
+                color: "#d1d5db",
+                padding: "6px 16px",
+                borderRadius: 8,
+                fontSize: 13,
+                cursor: "pointer",
+              }}
+            >
+              ログアウト
+            </button>
+          </>
         )}
       </div>
     </header>

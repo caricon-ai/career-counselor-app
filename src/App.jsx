@@ -11,6 +11,7 @@ import Terms from "./pages/Terms";
 import Payment from "./pages/Payment";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import ResetPassword from "./pages/ResetPassword";
+import ProfileSetup from "./pages/ProfileSetup";
 import Header from "./components/Header";
 import { supabase } from "./lib/supabase";
 
@@ -22,6 +23,8 @@ export default function App() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   // 最初からtrueにして、確認完了まで必ずローディングを表示する
   const [checkingSubscription, setCheckingSubscription] = useState(true);
+  // プロフィール情報（null=未確認、false=未設定、object=設定済み）
+  const [profile, setProfile] = useState(null);
   const location = useLocation();
 
   useEffect(() => {
@@ -53,25 +56,41 @@ export default function App() {
       return;
     }
 
-    // オーナーは常にアクセス可能
+    // オーナーは常にアクセス可能（プロフィールは確認する）
     const OWNER_EMAILS = ["kasane1101@gmail.com"];
     if (OWNER_EMAILS.includes(session.user.email)) {
       setIsSubscribed(true);
-      setCheckingSubscription(false);
+      supabase
+        .from("profiles")
+        .select("username, exam_period")
+        .eq("id", session.user.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          setProfile(data || false);
+          setCheckingSubscription(false);
+        });
       return;
     }
 
-    // ログイン済みの場合、サブスクリプションを確認
+    // ログイン済みの場合、サブスクリプションとプロフィールを確認
     const checkSubscription = async () => {
-      const { data, error } = await supabase
-        .from("subscriptions")
-        .select("status")
-        .eq("user_id", session.user.id)
-        .limit(1)
-        .maybeSingle();
+      const [subResult, profileResult] = await Promise.all([
+        supabase
+          .from("subscriptions")
+          .select("status")
+          .eq("user_id", session.user.id)
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("profiles")
+          .select("username, exam_period")
+          .eq("id", session.user.id)
+          .maybeSingle(),
+      ]);
 
-      if (error) console.error("サブスクリプション確認エラー:", error);
-      setIsSubscribed(data?.status === "active");
+      if (subResult.error) console.error("サブスクリプション確認エラー:", subResult.error);
+      setIsSubscribed(subResult.data?.status === "active");
+      setProfile(profileResult.data || false);
       setCheckingSubscription(false);
     };
 
@@ -102,9 +121,20 @@ export default function App() {
     return <Navigate to="/payment" />;
   }
 
+  // サブスク済みでプロフィール未設定の場合はプロフィール入力画面を表示
+  const appPaths2 = ["/scenario", "/roleplay", "/result"];
+  if (session && isSubscribed && profile === false && appPaths2.includes(location.pathname)) {
+    return (
+      <ProfileSetup
+        userId={session.user.id}
+        onComplete={(newProfile) => setProfile(newProfile)}
+      />
+    );
+  }
+
   return (
     <>
-      <Header session={session} />
+      <Header session={session} username={profile?.username} />
       <Routes>
         {/* 公開ページ */}
         <Route path="/" element={<Home />} />
@@ -116,7 +146,7 @@ export default function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* ログイン＋サブスクリプション必須ページ */}
-        <Route path="/scenario" element={session ? <Scenario /> : <Login />} />
+        <Route path="/scenario" element={session ? <Scenario username={profile?.username} /> : <Login />} />
         <Route path="/roleplay" element={session ? <RolePlay /> : <Login />} />
         <Route path="/result" element={session ? <Result /> : <Login />} />
 
