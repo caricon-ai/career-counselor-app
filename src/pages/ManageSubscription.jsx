@@ -24,12 +24,16 @@ export default function ManageSubscription({ session }) {
 
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error || "エラーが発生しました");
 
       // StripeのカスタマーポータルページへリダイレクトO
       window.location.href = data.url;
     } catch (err) {
-      setError("ページの読み込みに失敗しました。しばらく時間をおいてから再度お試しください。");
+      if (err.message === "顧客情報が見つかりません") {
+        setError("Stripeの顧客情報が見つかりません。サポートまでお問い合わせください。");
+      } else {
+        setError("ページの読み込みに失敗しました。しばらく時間をおいてから再度お試しください。");
+      }
       setLoading(false);
     }
   };
