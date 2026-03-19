@@ -30,6 +30,11 @@ export default function App() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      // ログインしたとき、サブスクリプション確認が終わるまでローディング状態にする
+      // こうしないと「確認前に /payment に飛ばされる」バグが起きる
+      if (session) {
+        setCheckingSubscription(true);
+      }
     });
 
     return () => subscription.unsubscribe();
