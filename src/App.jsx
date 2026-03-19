@@ -82,7 +82,7 @@ export default function App() {
         .from("profiles")
         .update({ login_streak: newStreak, last_login_date: today })
         .eq("id", userId)
-        .select("username, exam_period, login_streak, last_login_date")
+        .select("username, age, prefecture, exam_period, study_history, login_streak, last_login_date")
         .maybeSingle();
 
       return data || currentProfile;
@@ -94,7 +94,7 @@ export default function App() {
       setIsSubscribed(true);
       supabase
         .from("profiles")
-        .select("username, exam_period, login_streak, last_login_date")
+        .select("username, age, prefecture, exam_period, study_history, login_streak, last_login_date")
         .eq("id", session.user.id)
         .maybeSingle()
         .then(async ({ data }) => {
@@ -116,7 +116,7 @@ export default function App() {
           .maybeSingle(),
         supabase
           .from("profiles")
-          .select("username, exam_period, login_streak, last_login_date")
+          .select("username, age, prefecture, exam_period, study_history, login_streak, last_login_date")
           .eq("id", session.user.id)
           .maybeSingle(),
       ]);
