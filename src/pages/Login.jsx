@@ -42,8 +42,14 @@ export default function Login() {
 
     try {
       if (isSignUp) {
-        // 新規登録
-        const { error } = await supabase.auth.signUp({ email, password });
+        // 新規登録（確認リンクを踏んだ後は /payment に遷移させる）
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/payment?confirmed=true`,
+          },
+        });
         if (error) throw error;
         setMessage("確認メールを送信しました。受信ボックスをご確認ください。");
       } else {

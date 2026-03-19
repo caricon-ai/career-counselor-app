@@ -1,10 +1,14 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
 // 申し込みページ
 export default function Payment() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // URLに ?confirmed=true がついている場合、メール確認完了の案内を表示する
+  const [searchParams] = useSearchParams();
+  const isConfirmed = searchParams.get("confirmed") === "true";
 
   // 「申し込む」ボタンを押したときの処理
   const handleSubscribe = async () => {
@@ -44,6 +48,22 @@ export default function Payment() {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
+        {/* メール確認完了の案内（確認リンクから来た場合のみ表示） */}
+        {isConfirmed && (
+          <div style={{
+            background: "#f0fdf4",
+            border: "1px solid #86efac",
+            borderRadius: 8,
+            padding: "12px 16px",
+            marginBottom: 24,
+            fontSize: 14,
+            color: "#15803d",
+            lineHeight: 1.7,
+          }}>
+            ✅ メールアドレスの確認が完了しました！<br />
+            続けてお支払いの手続きをお願いします。
+          </div>
+        )}
         <h1 style={styles.title}>キャリコン実技試験対策AI</h1>
         <p style={styles.subtitle}>月額サブスクリプション</p>
 
