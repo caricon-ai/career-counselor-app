@@ -10,11 +10,12 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
 import Payment from "./pages/Payment";
 import PaymentSuccess from "./pages/PaymentSuccess";
+import ResetPassword from "./pages/ResetPassword";
 import Header from "./components/Header";
 import { supabase } from "./lib/supabase";
 
 // ログイン不要で見られるページ
-const PUBLIC_PATHS = ["/", "/legal", "/privacy", "/terms", "/payment", "/payment-success"];
+const PUBLIC_PATHS = ["/", "/legal", "/privacy", "/terms", "/payment", "/payment-success", "/reset-password"];
 
 export default function App() {
   const [session, setSession] = useState(undefined);
@@ -112,6 +113,7 @@ export default function App() {
         <Route path="/terms" element={<Terms />} />
         <Route path="/payment" element={<Payment />} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* ログイン＋サブスクリプション必須ページ */}
         <Route path="/scenario" element={session ? <Scenario /> : <Login />} />

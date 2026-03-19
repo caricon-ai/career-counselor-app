@@ -33,6 +33,8 @@ export default function Login() {
   const [password, setPassword] = useState("");
   // URLに ?mode=signup がついていれば最初から登録フォームを表示する
   const [isSignUp, setIsSignUp] = useState(searchParams.get("mode") === "signup");
+  // パスワードリセットフォームを表示するか
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -44,6 +46,16 @@ export default function Login() {
     setError("");
 
     try {
+      // パスワードリセットメール送信
+      if (isForgotPassword) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        setMessage("パスワードリセット用のメールを送信しました。メール内のリンクをクリックしてください。");
+        return;
+      }
+
       if (isSignUp) {
         // 新規登録（確認リンクを踏んだ後は /payment に遷移させる）
         const { error } = await supabase.auth.signUp({
@@ -89,17 +101,19 @@ export default function Login() {
           boxShadow: "0 2px 16px rgba(0,0,0,0.08)",
         }}
       >
-        {/* 登録完了後は専用の案内画面を表示 */}
+        {/* メール送信完了後の案内画面 */}
         {message ? (
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 56, marginBottom: 16 }}>📧</div>
             <h2 style={{ fontSize: 20, fontWeight: "bold", marginBottom: 12 }}>
-              確認メールを送りました
+              {isForgotPassword ? "リセットメールを送りました" : "確認メールを送りました"}
             </h2>
             <p style={{ color: "#4b5563", lineHeight: 1.8, marginBottom: 24, fontSize: 14 }}>
               <strong>{email}</strong> 宛にメールを送信しました。<br />
-              メール内の「確認リンク」をクリックすると<br />
-              登録が完了します。
+              {isForgotPassword
+                ? "メール内の「パスワードをリセット」をクリックしてください。"
+                : <>メール内の「確認リンク」をクリックすると<br />登録が完了します。</>
+              }
             </p>
             <div style={{
               background: "#fefce8",
@@ -115,7 +129,7 @@ export default function Login() {
               💡 メールが届かない場合は、迷惑メールフォルダもご確認ください。
             </div>
             <button
-              onClick={() => { setIsSignUp(false); setMessage(""); setEmail(""); setPassword(""); }}
+              onClick={() => { setIsSignUp(false); setIsForgotPassword(false); setMessage(""); setEmail(""); setPassword(""); }}
               style={{
                 width: "100%",
                 padding: 12,
@@ -131,6 +145,82 @@ export default function Login() {
               ログイン画面へ
             </button>
           </div>
+        ) : isForgotPassword ? (
+          /* パスワードリセット用メールアドレス入力フォーム */
+          <>
+            <h2 style={{ textAlign: "center", marginBottom: 6, fontSize: 22 }}>
+              パスワードをお忘れの方
+            </h2>
+            <p style={{ textAlign: "center", fontSize: 13, color: "#6b7280", marginBottom: 24 }}>
+              登録済みのメールアドレスを入力してください。<br />パスワード再設定用のメールをお送りします。
+            </p>
+
+            <form onSubmit={handleSubmit}>
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: "block", marginBottom: 6, fontWeight: "bold", fontSize: 14 }}>
+                  メールアドレス
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="example@email.com"
+                  required
+                  style={{
+                    width: "100%",
+                    padding: 10,
+                    borderRadius: 8,
+                    border: "1px solid #ccc",
+                    boxSizing: "border-box",
+                    fontSize: 15,
+                  }}
+                />
+              </div>
+
+              {error && (
+                <div style={{
+                  background: "#fef2f2",
+                  border: "1px solid #fca5a5",
+                  borderRadius: 8,
+                  padding: "10px 14px",
+                  marginBottom: 16,
+                  fontSize: 14,
+                  color: "#b91c1c",
+                  lineHeight: 1.6,
+                }}>
+                  ⚠️ {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  width: "100%",
+                  padding: 12,
+                  background: "linear-gradient(180deg, #2563eb, #1d4ed8)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 8,
+                  fontWeight: "bold",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  opacity: loading ? 0.7 : 1,
+                  fontSize: 16,
+                }}
+              >
+                {loading ? "送信中..." : "リセットメールを送る"}
+              </button>
+            </form>
+
+            <div style={{ textAlign: "center", marginTop: 20 }}>
+              <button
+                onClick={() => { setIsForgotPassword(false); setError(""); }}
+                style={{ background: "none", border: "none", color: "#2563eb", cursor: "pointer", fontSize: 14 }}
+              >
+                ← ログイン画面に戻る
+              </button>
+            </div>
+          </>
         ) : (
           <>
             <h2 style={{ textAlign: "center", marginBottom: 6, fontSize: 22 }}>
@@ -238,6 +328,18 @@ export default function Login() {
                 {isSignUp ? "すでにアカウントをお持ちの方はこちら" : "新規登録はこちら"}
               </button>
             </div>
+
+            {/* ログイン時のみパスワードリセットリンクを表示 */}
+            {!isSignUp && (
+              <div style={{ textAlign: "center", marginTop: 10 }}>
+                <button
+                  onClick={() => { setIsForgotPassword(true); setError(""); }}
+                  style={{ background: "none", border: "none", color: "#9ca3af", cursor: "pointer", fontSize: 13 }}
+                >
+                  パスワードをお忘れの方はこちら
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
