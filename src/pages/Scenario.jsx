@@ -112,6 +112,16 @@ export default function Scenario({ username, loginStreak }) {
 
         </div>
       ))}
+
+      {/* ページ下部にサブスクリプション管理リンク */}
+      <div style={{ textAlign: "center", marginTop: 16, paddingBottom: 40 }}>
+        <button
+          onClick={() => navigate("/manage-subscription")}
+          style={{ background: "none", border: "none", color: "#9ca3af", cursor: "pointer", fontSize: 12 }}
+        >
+          サブスクリプションの解約・管理はこちら
+        </button>
+      </div>
     </main>
   );
 }
