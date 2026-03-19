@@ -2,6 +2,30 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 
+// Supabaseから返ってくる英語エラーを日本語に変換する関数
+function toJapaneseError(message) {
+  if (!message) return "エラーが発生しました。もう一度お試しください。";
+
+  // よくあるエラーメッセージを日本語に変換
+  if (message.includes("Invalid login credentials"))
+    return "メールアドレスまたはパスワードが正しくありません。";
+  if (message.includes("Email not confirmed"))
+    return "メールアドレスの確認が完了していません。届いたメールのリンクをクリックしてください。";
+  if (message.includes("User already registered"))
+    return "このメールアドレスはすでに登録されています。ログインをお試しください。";
+  if (message.includes("Password should be at least"))
+    return "パスワードは6文字以上で設定してください。";
+  if (message.includes("Unable to validate email address") || message.includes("invalid format"))
+    return "正しいメールアドレスの形式で入力してください。";
+  if (message.includes("Email rate limit exceeded") || message.includes("rate limit"))
+    return "しばらく時間をおいてから再度お試しください。";
+  if (message.includes("Network") || message.includes("fetch"))
+    return "通信エラーが発生しました。インターネット接続を確認してください。";
+
+  // 上記に当てはまらない場合はそのまま表示（開発中の確認用）
+  return "エラーが発生しました。もう一度お試しください。";
+}
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,14 +45,15 @@ export default function Login() {
         // 新規登録
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        setMessage("確認メールを送信しました。メールを確認してください。");
+        setMessage("確認メールを送信しました。受信ボックスをご確認ください。");
       } else {
         // ログイン
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
     } catch (err) {
-      setError(err.message || "エラーが発生しました");
+      // 英語エラーを日本語に変換して表示
+      setError(toJapaneseError(err.message));
     } finally {
       setLoading(false);
     }
@@ -97,10 +122,32 @@ export default function Login() {
           </div>
 
           {error && (
-            <div style={{ color: "red", marginBottom: 16, fontSize: 14 }}>{error}</div>
+            <div style={{
+              background: "#fef2f2",
+              border: "1px solid #fca5a5",
+              borderRadius: 8,
+              padding: "10px 14px",
+              marginBottom: 16,
+              fontSize: 14,
+              color: "#b91c1c",
+              lineHeight: 1.6,
+            }}>
+              ⚠️ {error}
+            </div>
           )}
           {message && (
-            <div style={{ color: "green", marginBottom: 16, fontSize: 14 }}>{message}</div>
+            <div style={{
+              background: "#f0fdf4",
+              border: "1px solid #86efac",
+              borderRadius: 8,
+              padding: "10px 14px",
+              marginBottom: 16,
+              fontSize: 14,
+              color: "#15803d",
+              lineHeight: 1.6,
+            }}>
+              ✅ {message}
+            </div>
           )}
 
           <button
