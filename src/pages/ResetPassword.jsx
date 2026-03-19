@@ -53,10 +53,10 @@ export default function ResetPassword() {
       // Supabaseでパスワードを更新する
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
-      setDone(true);
+      // 成功後は強制的にログイン画面へ遷移（App.jsxの状態管理の割り込みを避けるため）
+      window.location.href = "/login?reset=success";
     } catch (err) {
-      setError("パスワードの更新に失敗しました。リンクの有効期限が切れている可能性があります。");
-    } finally {
+      setError("パスワードの更新に失敗しました。もう一度「パスワードをお忘れの方」からやり直してください。");
       setLoading(false);
     }
   };

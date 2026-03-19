@@ -38,6 +38,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  // ?reset=success でリダイレクトされた場合に成功バナーを表示
+  const resetSuccess = searchParams.get("reset") === "success";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -232,7 +234,22 @@ export default function Login() {
                 メールアドレスとパスワードを入力して<br />アカウントを作成してください
               </p>
             )}
-            {!isSignUp && <div style={{ marginBottom: 24 }} />}
+            {/* パスワードリセット成功バナー */}
+            {resetSuccess && !isSignUp && (
+              <div style={{
+                background: "#f0fdf4",
+                border: "1px solid #86efac",
+                borderRadius: 8,
+                padding: "10px 14px",
+                marginBottom: 16,
+                fontSize: 14,
+                color: "#166534",
+                lineHeight: 1.6,
+              }}>
+                ✅ パスワードを変更しました。新しいパスワードでログインしてください。
+              </div>
+            )}
+            {!isSignUp && !resetSuccess && <div style={{ marginBottom: 24 }} />}
 
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom: 16 }}>
