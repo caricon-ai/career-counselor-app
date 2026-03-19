@@ -5,7 +5,6 @@ import { useState } from "react";
 export default function Home() {
   const navigate = useNavigate();
   const [hoverStart, setHoverStart] = useState(false);
-  const [hoverLogin, setHoverLogin] = useState(false);
 
   return (
     <div style={{ background: "#f3f6fb", minHeight: "100vh", fontFamily: "sans-serif" }}>
@@ -46,61 +45,30 @@ export default function Home() {
           試験の4区分評価に沿った客観的なフィードバックを受けられます。
         </p>
 
-        {/* CTAボタン */}
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center" }}>
-          {/* 新規ユーザー向け */}
-          <div style={{ textAlign: "center" }}>
-            <button
-              onClick={() => navigate("/scenario?mode=signup")}
-              onMouseEnter={() => setHoverStart(true)}
-              onMouseLeave={() => setHoverStart(false)}
-              style={{
-                background: hoverStart ? "#1d4ed8" : "#2563eb",
-                color: "#fff",
-                border: "none",
-                padding: "14px 32px",
-                fontSize: 16,
-                borderRadius: 12,
-                fontWeight: "bold",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                transform: hoverStart ? "translateY(-2px)" : "none",
-                boxShadow: hoverStart ? "0 6px 14px rgba(37,99,235,0.35)" : "none",
-                display: "block",
-              }}
-            >
-              新規登録・お申し込み
-            </button>
-            <p style={{ marginTop: 6, fontSize: 12, color: "#9ca3af" }}>はじめてご利用の方</p>
-          </div>
-
-          {/* 既存ユーザー向け */}
-          <div style={{ textAlign: "center" }}>
-            <button
-              onClick={() => navigate("/scenario")}
-              onMouseEnter={() => setHoverLogin(true)}
-              onMouseLeave={() => setHoverLogin(false)}
-              style={{
-                background: hoverLogin ? "#f9fafb" : "#fff",
-                color: "#374151",
-                border: "1px solid #d1d5db",
-                padding: "14px 32px",
-                fontSize: 16,
-                borderRadius: 12,
-                fontWeight: "bold",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                display: "block",
-              }}
-            >
-              ログイン
-            </button>
-            <p style={{ marginTop: 6, fontSize: 12, color: "#9ca3af" }}>すでに会員の方</p>
-          </div>
-        </div>
+        {/* CTAボタン：1つに絞る（ログインはヘッダーへ） */}
+        <button
+          onClick={() => navigate("/scenario?mode=signup")}
+          onMouseEnter={() => setHoverStart(true)}
+          onMouseLeave={() => setHoverStart(false)}
+          style={{
+            background: hoverStart ? "#1d4ed8" : "#2563eb",
+            color: "#fff",
+            border: "none",
+            padding: "16px 40px",
+            fontSize: 17,
+            borderRadius: 12,
+            fontWeight: "bold",
+            cursor: "pointer",
+            transition: "all 0.2s ease",
+            transform: hoverStart ? "translateY(-2px)" : "none",
+            boxShadow: hoverStart ? "0 8px 20px rgba(37,99,235,0.4)" : "0 2px 8px rgba(37,99,235,0.2)",
+          }}
+        >
+          今すぐ始める
+        </button>
 
         {/* 料金ヒント */}
-        <p style={{ marginTop: 20, fontSize: 13, color: "#9ca3af" }}>
+        <p style={{ marginTop: 16, fontSize: 13, color: "#9ca3af" }}>
           月額5,000円（税込）・いつでも解約可能
         </p>
       </section>

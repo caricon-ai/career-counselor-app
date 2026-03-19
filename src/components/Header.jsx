@@ -5,9 +5,8 @@ import { supabase } from "../lib/supabase";
 export default function Header({ rightContent, session }) {
   const navigate = useNavigate();
   const location = useLocation();
-const isHome = location.pathname === "/";
-  const [hoverTop, setHoverTop] = useState(false);
-
+  const isHome = location.pathname === "/";
+  const [hoverLogin, setHoverLogin] = useState(false);
 
   return (
     <header
@@ -20,38 +19,63 @@ const isHome = location.pathname === "/";
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 20px",
+        padding: "0 24px",
         color: "#ffffff",
       }}
     >
-      {/* 左：ロゴ */}
-      <div style={{ fontWeight: "bold", fontSize: 14 }}>
+      {/* 左：ロゴ（クリックでトップへ） */}
+      <div
+        onClick={() => navigate("/")}
+        style={{ fontWeight: "bold", fontSize: 15, cursor: "pointer", letterSpacing: "0.02em" }}
+      >
         Career Counselor AI
       </div>
 
-      {/* 右：任意ボタン or デフォルト */}
+      {/* 右：ナビゲーション */}
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        {!isHome && (
-          rightContent ? rightContent : (
-            <button
-              onClick={() => navigate("/")}
-              onMouseEnter={() => setHoverTop(true)}
-              onMouseLeave={() => setHoverTop(false)}
-              style={{
-                background: hoverTop ? "#1d4ed8" : "#2563eb",
-                border: "none",
-                color: "#fff",
-                padding: "6px 14px",
-                borderRadius: 8,
-                fontSize: 13,
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              トップへ戻る
-            </button>
-          )
+        {rightContent}
+
+        {/* ホームページで未ログインの場合：ログインボタンを表示 */}
+        {isHome && !session && (
+          <button
+            onClick={() => navigate("/scenario")}
+            onMouseEnter={() => setHoverLogin(true)}
+            onMouseLeave={() => setHoverLogin(false)}
+            style={{
+              background: "transparent",
+              border: "1px solid #4b5563",
+              color: hoverLogin ? "#ffffff" : "#d1d5db",
+              padding: "6px 16px",
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: "bold",
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+          >
+            ログイン
+          </button>
         )}
+
+        {/* ホーム以外のページ：トップへ戻るボタン */}
+        {!isHome && !session && (
+          <button
+            onClick={() => navigate("/")}
+            style={{
+              background: "transparent",
+              border: "1px solid #4b5563",
+              color: "#d1d5db",
+              padding: "6px 16px",
+              borderRadius: 8,
+              fontSize: 13,
+              cursor: "pointer",
+            }}
+          >
+            トップへ戻る
+          </button>
+        )}
+
+        {/* ログイン済みの場合：ログアウトボタン */}
         {session && (
           <button
             onClick={() => supabase.auth.signOut()}
@@ -59,7 +83,7 @@ const isHome = location.pathname === "/";
               background: "transparent",
               border: "1px solid #6b7280",
               color: "#d1d5db",
-              padding: "6px 14px",
+              padding: "6px 16px",
               borderRadius: 8,
               fontSize: 13,
               cursor: "pointer",
@@ -69,7 +93,6 @@ const isHome = location.pathname === "/";
           </button>
         )}
       </div>
-
     </header>
   );
 }
