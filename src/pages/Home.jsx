@@ -91,7 +91,7 @@ export default function Home() {
 
         {/* 料金ヒント */}
         <p style={{ marginTop: 16, fontSize: 13, color: "#9ca3af" }}>
-          月額1,980円（税込）・いつでも解約可能
+          月額5,000円（税込）・いつでも解約可能
         </p>
       </section>
 
@@ -217,7 +217,7 @@ export default function Home() {
           }}>
             <div style={{ fontSize: 14, color: "#6b7280", marginBottom: 8 }}>月額プラン</div>
             <div style={{ fontSize: 40, fontWeight: "bold", color: "#1f2937", marginBottom: 4 }}>
-              ¥1,980
+              ¥5,000
               <span style={{ fontSize: 16, fontWeight: "normal", color: "#6b7280" }}> / 月（税込）</span>
             </div>
             <p style={{ fontSize: 13, color: "#9ca3af", marginBottom: 28 }}>いつでも解約可能</p>
