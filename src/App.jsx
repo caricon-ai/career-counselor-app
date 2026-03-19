@@ -47,7 +47,8 @@ export default function App() {
         .from("subscriptions")
         .select("status")
         .eq("user_id", session.user.id)
-        .single();
+        .limit(1)
+        .maybeSingle();
 
       setIsSubscribed(data?.status === "active");
       setCheckingSubscription(false);
