@@ -1,6 +1,6 @@
 // src/pages/Login.jsx
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
 // Supabaseから返ってくる英語エラーを日本語に変換する関数
@@ -28,6 +28,7 @@ function toJapaneseError(message) {
 }
 
 export default function Login() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -357,6 +358,16 @@ export default function Login() {
                 </button>
               </div>
             )}
+
+            {/* トップページへ戻るリンク */}
+            <div style={{ textAlign: "center", marginTop: 20, paddingTop: 16, borderTop: "1px solid #f3f4f6" }}>
+              <button
+                onClick={() => navigate("/")}
+                style={{ background: "none", border: "none", color: "#9ca3af", cursor: "pointer", fontSize: 13 }}
+              >
+                ← トップページへ戻る
+              </button>
+            </div>
           </>
         )}
       </div>
