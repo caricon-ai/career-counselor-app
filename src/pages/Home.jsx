@@ -67,7 +67,7 @@ function FaqItem({ q, a }) {
   );
 }
 
-export default function Home() {
+export default function Home({ session }) {
   const navigate = useNavigate();
   const [hoverStart, setHoverStart] = useState(false);
   const [hoverStart2, setHoverStart2] = useState(false);
@@ -144,18 +144,9 @@ export default function Home() {
           何度でも、いつでも、自分のペースで。
         </p>
 
-        {/* 緊迫感 */}
-        <p style={{
-          fontSize: 13,
-          color: "rgba(255,255,255,0.6)",
-          marginBottom: 36,
-        }}>
-          ※ 2026年前期試験まであとわずか
-        </p>
-
         {/* CTAボタン */}
         <button
-          onClick={() => navigate("/login?mode=signup")}
+          onClick={() => session ? navigate("/scenario") : navigate("/login?mode=signup")}
           onMouseEnter={() => setHoverStart(true)}
           onMouseLeave={() => setHoverStart(false)}
           style={{
@@ -174,12 +165,14 @@ export default function Home() {
               : "0 4px 16px rgba(0,0,0,0.2)",
           }}
         >
-          無料で登録して練習を始める →
+          {session ? "ケース一覧へ →" : "無料で登録して練習を始める →"}
         </button>
 
-        <p style={{ marginTop: 16, fontSize: 13, color: "rgba(255,255,255,0.55)" }}>
-          月額5,000円（税込）・いつでも解約可能
-        </p>
+        {!session && (
+          <p style={{ marginTop: 16, fontSize: 13, color: "rgba(255,255,255,0.55)" }}>
+            月額5,000円（税込）・いつでも解約可能
+          </p>
+        )}
       </section>
 
       {/* ===== A. ペインポイントセクション ===== */}

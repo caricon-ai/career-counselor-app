@@ -173,7 +173,7 @@ export default function App() {
       <Header session={session} username={profile?.username} />
       <Routes>
         {/* 公開ページ */}
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Home session={session} />} />
         <Route path="/legal" element={<LegalPage />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<Terms />} />
