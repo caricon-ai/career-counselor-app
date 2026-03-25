@@ -34,7 +34,7 @@ export default function Terms() {
         {/* 第3条 */}
         <h2 style={sectionTitle}>第3条（料金・決済）</h2>
         <ul style={list}>
-          <li>月額料金：1,980円（税込）</li>
+          <li>月額料金：5,000円（税込）</li>
           <li>決済方法：クレジットカード（Stripe経由）</li>
           <li>毎月自動更新されます</li>
           <li>月の途中から利用を開始した場合も、その月の料金が発生します</li>
