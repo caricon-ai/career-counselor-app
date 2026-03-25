@@ -12,7 +12,7 @@ export default function Terms() {
         <p style={{ fontSize: 13, color: "#9ca3af", marginBottom: 32 }}>最終更新日：2026年3月17日</p>
 
         <p style={paragraph}>
-          本利用規約（以下「本規約」）は、笠原 直樹（以下「運営者」）が提供する
+          本利用規約（以下「本規約」）は、キャリコン試験研究所（以下「運営者」）が提供する
           「Career Counselor AI」（以下「本サービス」）の利用条件を定めるものです。
           本サービスをご利用いただく場合、本規約に同意したものとみなします。
         </p>
@@ -101,7 +101,7 @@ export default function Terms() {
         <h2 style={sectionTitle}>お問い合わせ</h2>
         <p style={paragraph}>
           本規約に関するお問い合わせは、下記までご連絡ください。<br />
-          事業者名：笠原 直樹<br />
+          事業者名：キャリコン試験研究所<br />
           メール：kasane1101@gmail.com
         </p>
 

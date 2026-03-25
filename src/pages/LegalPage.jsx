@@ -11,8 +11,8 @@ export default function LegalPage() {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 15, lineHeight: 2 }}>
           <tbody>
             {[
-              ["販売業者", "笠原 直樹"],
-              ["運営統括責任者", "笠原 直樹"],
+              ["販売業者", "キャリコン試験研究所"],
+              ["運営統括責任者", "キャリコン試験研究所"],
               ["所在地", "〒680-0000 鳥取県鳥取市田島712番地2"],
               ["電話番号", "請求があったら遅滞なく開示します"],
               ["メールアドレス", "kasane1101@gmail.com"],

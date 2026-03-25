@@ -92,7 +92,7 @@ export default function PrivacyPolicy() {
         <h2 style={sectionTitle}>お問い合わせ</h2>
         <p style={paragraph}>
           個人情報の取り扱いに関するお問い合わせは、下記までご連絡ください。<br />
-          事業者名：笠原 直樹<br />
+          事業者名：キャリコン試験研究所<br />
           メール：kasane1101@gmail.com
         </p>
 
