@@ -15,7 +15,7 @@ dist-ssr
 # 環境変数（APIキーが含まれるため絶対にGitHubに上げない）
 .env
 .env.local
-.env.production
+# .env.production はSupabaseの公開キーのみ含むためGitHubにあげてOK
 
 # Editor directories and files
 .vscode/*
