@@ -165,7 +165,7 @@ export default function Home({ session }) {
               : "0 4px 16px rgba(0,0,0,0.2)",
           }}
         >
-          {session ? "ケース一覧へ →" : "無料で登録して練習を始める →"}
+          {session ? "ケース一覧へ →" : "今すぐ登録する（月額5,000円）→"}
         </button>
 
         {!session && (
@@ -481,7 +481,7 @@ export default function Home({ session }) {
             boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
           }}
         >
-          無料で登録して練習を始める →
+          今すぐ登録する（月額5,000円）→
         </button>
         <p style={{ marginTop: 16, fontSize: 13, color: "rgba(255,255,255,0.55)" }}>
           月額5,000円（税込）・いつでも解約可能
