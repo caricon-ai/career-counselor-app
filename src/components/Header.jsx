@@ -38,7 +38,7 @@ export default function Header({ rightContent, session, username }) {
         {/* ホームページで未ログインの場合：ログインボタンを表示 */}
         {isHome && !session && (
           <button
-            onClick={() => navigate("/scenario")}
+            onClick={() => navigate("/login")}
             onMouseEnter={() => setHoverLogin(true)}
             onMouseLeave={() => setHoverLogin(false)}
             style={{
