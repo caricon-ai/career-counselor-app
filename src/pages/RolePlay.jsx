@@ -91,7 +91,12 @@ export default function RolePlay() {
     setInput("");
     setLoading(true);
     try {
-      const res = await apiPost("/api/chat", { messages: next, caseDisplayName: caseLabel });
+      const res = await apiPost("/api/chat", {
+        messages: next,
+        caseDisplayName: caseLabel,
+        caseStatus: currentCase?.status || "",
+        caseText,
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setMessages([...next, { role: "assistant", content: data.content }]);
@@ -106,7 +111,14 @@ export default function RolePlay() {
     if (evaluating) return;
     setEvaluating(true);
     try {
-      const res = await apiPost("/api/evaluate", { caseId, messages, caseName: caseLabel, caseText });
+      const res = await apiPost("/api/evaluate", {
+        caseId,
+        messages,
+        caseName: caseLabel,
+        caseText,
+        caseStatus: currentCase?.status || "",
+        evaluationPoints: currentCase?.evaluationPoints || [],
+      });
       if (!res.ok) { alert("採点処理でエラーが発生しました。"); setEvaluating(false); return; }
       const score = await res.json();
       // 採点が済んだ会話は自動保存から消し、次回は最初から始められるようにする

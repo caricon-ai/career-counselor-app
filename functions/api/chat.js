@@ -14,7 +14,7 @@ export async function onRequestPost(context) {
     const auth = await requireSubscriber(request, env);
     if (auth.error) return auth.error;
 
-    const { messages, caseDisplayName } = await request.json();
+    const { messages, caseDisplayName, caseStatus, caseText } = await request.json();
 
     if (!Array.isArray(messages)) {
       return Response.json({ error: "messages must be an array" }, { status: 400, headers: CORS });
@@ -22,9 +22,22 @@ export async function onRequestPost(context) {
 
     const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
 
+    const background = [
+      caseStatus ? `【あなたの状況】\n${caseStatus}` : "",
+      caseText ? `【あなたが相談したいこと】\n${caseText}` : "",
+    ].filter(Boolean).join("\n\n");
+
     const systemPrompt = `
 あなたは「キャリアコンサルティング技能検定2級 実技（面接）」の相談者です。
 相談者名は「${caseDisplayName || "相談者"}」です。
+
+${background || "（背景情報なし）"}
+
+【背景の扱い】
+・上の状況・相談内容は「あなた自身の事実」です。聞かれたら、これに沿って具体的に答えてください
+・上に書かれていない細部（職場の様子、家族の言葉、日々の出来事など）を聞かれたら、
+  上の状況と矛盾しない範囲で自然に補って答え、一度話した内容はその後も一貫させてください
+・相談内容に書かれていることを、聞かれる前に自分から全部説明しないでください
 
 あなたはキャリアコンサルタントではありません。
 助言・整理・評価・解説・理論的まとめは一切しません。

@@ -47,7 +47,7 @@ export async function onRequestPost(context) {
     const auth = await requireSubscriber(request, env);
     if (auth.error) return auth.error;
 
-    const { messages, caseId, caseName, caseText } = await request.json();
+    const { messages, caseId, caseName, caseText, caseStatus, evaluationPoints } = await request.json();
 
     if (!Array.isArray(messages)) {
       return Response.json({ error: "messages must be an array" }, { status: 400, headers: CORS });
@@ -126,7 +126,7 @@ result は 60 以上なら「到達」、60 未満なら「所要基準未達」
 
     const user = `
 ケース：${caseName || caseId || "不明"}
-${caseText ? `相談内容：${caseText}\n` : ""}
+${caseStatus ? `相談者の状況：${caseStatus}\n` : ""}${caseText ? `相談内容：${caseText}\n` : ""}${Array.isArray(evaluationPoints) && evaluationPoints.length ? `このケースの評価ポイント：\n${evaluationPoints.map((p) => `- ${p}`).join("\n")}\n` : ""}
 今回は同じケースの ${attempt} 回目の練習です（RP${attempt}）。
 ${past.length ? `過去の練習記録：\n${pastSummary}\n` : "過去の練習記録はありません。\n"}
 CC発話数：${ccCount}
