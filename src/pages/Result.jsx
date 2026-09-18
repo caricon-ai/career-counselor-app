@@ -20,7 +20,8 @@ export default function Result() {
     return null;
   }
 
-  const { messages = [], caseId = "unknown", score } = location.state;
+  const { messages = [], caseId = "unknown", score, createdAt } = location.state;
+  const dateLabel = createdAt ? new Date(createdAt).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : null;
 
   if (!score || !score.summary) {
     return (
@@ -58,7 +59,9 @@ export default function Result() {
           <h1 style={{ margin: "0 0 4px", fontSize: isMobile ? 20 : 26, color: "#1f2937" }}>
             面接ロールプレイ フィードバック
           </h1>
-          <div style={{ color: "#6b7280", fontSize: 14 }}>ケース：{caseLabel}</div>
+          <div style={{ color: "#6b7280", fontSize: 14 }}>
+            ケース：{caseLabel}{dateLabel && ` ／ 実施：${dateLabel}`}
+          </div>
         </div>
 
         {/* ===== アクションボタン（スマホ：上部に表示） ===== */}
@@ -99,19 +102,19 @@ export default function Result() {
                 ケース一覧へ
               </button>
               <button
-                onClick={() => window.print()}
+                onClick={() => navigate("/history")}
                 style={{
                   flex: 1,
                   padding: 11,
-                  background: "#fff",
-                  border: "1.5px solid #e5e7eb",
+                  background: "#eff6ff",
+                  border: "1.5px solid #bfdbfe",
                   borderRadius: 10,
-                  color: "#374151",
+                  color: "#1d4ed8",
                   fontSize: 13,
                   cursor: "pointer",
                 }}
               >
-                PDFで保存
+                練習履歴
               </button>
             </div>
           </div>
@@ -121,6 +124,7 @@ export default function Result() {
         {!isMobile && (
           <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
             <button onClick={() => window.print()} style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", fontSize: 13 }}>PDFで保存</button>
+            <button onClick={() => navigate("/history")} style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #bfdbfe", background: "#eff6ff", color: "#1d4ed8", cursor: "pointer", fontSize: 13 }}>📈 練習履歴を見る</button>
             <button onClick={() => navigate("/")} style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", fontSize: 13 }}>トップへ戻る</button>
           </div>
         )}

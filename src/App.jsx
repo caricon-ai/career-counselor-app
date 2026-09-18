@@ -14,6 +14,7 @@ import ResetPassword from "./pages/ResetPassword";
 import ProfileSetup from "./pages/ProfileSetup";
 import ProfileEdit from "./pages/ProfileEdit";
 import ManageSubscription from "./pages/ManageSubscription";
+import History from "./pages/History";
 import Header from "./components/Header";
 import { supabase } from "./lib/supabase";
 
@@ -151,15 +152,14 @@ export default function App() {
   }
 
   // ログイン済みだが未払いの場合、アプリページへのアクセスは支払いページへ
-  const appPaths = ["/scenario", "/roleplay", "/result"];
+  const appPaths = ["/scenario", "/roleplay", "/result", "/history"];
   const isAppPath = appPaths.includes(location.pathname);
   if (session && !isSubscribed && isAppPath) {
     return <Navigate to="/payment" />;
   }
 
   // サブスク済みでプロフィール未設定の場合はプロフィール入力画面を表示
-  const appPaths2 = ["/scenario", "/roleplay", "/result"];
-  if (session && isSubscribed && profile === false && appPaths2.includes(location.pathname)) {
+  if (session && isSubscribed && profile === false && isAppPath) {
     return (
       <ProfileSetup
         userId={session.user.id}
@@ -187,6 +187,7 @@ export default function App() {
         <Route path="/manage-subscription" element={session ? <ManageSubscription /> : <Login />} />
         <Route path="/roleplay" element={session ? <RolePlay /> : <Login />} />
         <Route path="/result" element={session ? <Result /> : <Login />} />
+        <Route path="/history" element={session ? <History /> : <Login />} />
 
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

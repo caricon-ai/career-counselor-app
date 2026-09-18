@@ -79,6 +79,19 @@ export default function Header({ rightContent, session, username }) {
         {session && (
           <>
             <button
+              onClick={() => navigate("/history")}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#d1d5db",
+                fontSize: 13,
+                cursor: "pointer",
+                padding: "6px 4px",
+              }}
+            >
+              練習履歴
+            </button>
+            <button
               onClick={() => navigate("/profile-edit")}
               style={{
                 background: "transparent",

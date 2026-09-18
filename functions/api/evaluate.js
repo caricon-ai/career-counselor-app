@@ -224,7 +224,17 @@ ${transcript}
       return Response.json({ error: "invalid score json from model", raw }, { status: 500, headers: CORS });
     }
 
-    return Response.json(score, { headers: CORS });
+    // 採点結果を履歴として保存する（保存に失敗しても採点結果自体は返す）
+    let resultId = null;
+    const { data: saved, error: saveError } = await auth.supabase
+      .from("results")
+      .insert({ user_id: auth.user.id, case_id: caseId || "unknown", score, messages })
+      .select("id")
+      .single();
+    if (saveError) console.error("採点結果の保存エラー:", saveError);
+    else resultId = saved.id;
+
+    return Response.json({ ...score, resultId }, { headers: CORS });
   } catch (err) {
     console.error(err);
     return Response.json({ error: "evaluate failed" }, { status: 500, headers: CORS });

@@ -30,14 +30,15 @@ export default function Scenario({ username, loginStreak }) {
           )}
         </div>
       )}
-      <h1
-        style={{
-          fontSize: 24,
-          marginBottom: 24,
-        }}
-      >
-        ケース一覧
-      </h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 10 }}>
+        <h1 style={{ fontSize: 24, margin: 0 }}>ケース一覧</h1>
+        <button
+          onClick={() => navigate("/history")}
+          style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #bfdbfe", background: "#eff6ff", color: "#1d4ed8", fontSize: 13, fontWeight: "bold", cursor: "pointer" }}
+        >
+          📈 練習履歴を見る
+        </button>
+      </div>
 
       {scenarios.map((s, index) => (
         <div
