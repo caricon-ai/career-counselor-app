@@ -4,8 +4,9 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiPost } from "../lib/api";
 
-export default function ManageSubscription({ session }) {
+export default function ManageSubscription() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -16,11 +17,7 @@ export default function ManageSubscription({ session }) {
 
     try {
       // サーバーレス関数を呼び出してStripeポータルのURLを取得する
-      const res = await fetch("/api/create-portal-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userEmail: session.user.email }),
-      });
+      const res = await apiPost("/api/create-portal-session", {});
 
       const data = await res.json();
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { scenarios } from "../data/scenarios";
 
 export default function Result() {
   const [hoveredButton, setHoveredButton] = useState(null);
@@ -30,14 +31,8 @@ export default function Result() {
     );
   }
 
-  const CASE_LABELS = {
-    yamazaki: "山崎 玲奈",
-    case02: "渡辺 涼太",
-    case03: "中田 真由美",
-    case04: "西 孝之",
-    case05: "橋本 美奈",
-  };
-  const caseLabel = CASE_LABELS[caseId] || "不明";
+  // ケース名はシナリオデータから引く（ケース追加時に更新漏れが起きないように）
+  const caseLabel = scenarios.find((s) => s.id === caseId)?.name || "不明";
 
   const summaryItems = [
     { key: "basic", label: "基本的態度" },

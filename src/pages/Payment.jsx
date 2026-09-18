@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { supabase } from "../lib/supabase";
+import { apiPost } from "../lib/api";
 
 // ステップ表示コンポーネント（Login.jsx と同じデザイン）
 function StepIndicator({ currentStep }) {
@@ -67,16 +67,8 @@ export default function Payment() {
     setError("");
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-
-      const response = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user.id,
-          userEmail: user.email,
-        }),
-      });
+      // ユーザー情報はサーバー側がトークンから特定するので送らない
+      const response = await apiPost("/api/create-checkout-session", {});
 
       const data = await response.json();
 
@@ -146,7 +138,7 @@ export default function Payment() {
         {/* 含まれる内容 */}
         <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px", display: "flex", flexDirection: "column", gap: 10 }}>
           {[
-            "5種類のロールプレイケースが使い放題",
+            "10種類のロールプレイケースが使い放題",
             "AIとの面接練習（何度でも）",
             "4区分のAI採点・フィードバック",
             "スマホ・PC・タブレット対応",

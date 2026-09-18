@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { scenarios } from "../data/scenarios";
+import { apiPost } from "../lib/api";
 
 export default function RolePlay() {
   const navigate = useNavigate();
@@ -90,12 +91,9 @@ export default function RolePlay() {
     setInput("");
     setLoading(true);
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next, caseDisplayName: caseLabel }),
-      });
+      const res = await apiPost("/api/chat", { messages: next, caseDisplayName: caseLabel });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
       setMessages([...next, { role: "assistant", content: data.content }]);
     } catch {
       setMessages([...next, { role: "assistant", content: "（通信エラー。もう一度お試しください）" }]);
@@ -108,11 +106,7 @@ export default function RolePlay() {
     if (evaluating) return;
     setEvaluating(true);
     try {
-      const res = await fetch("/api/evaluate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ caseId, messages }),
-      });
+      const res = await apiPost("/api/evaluate", { caseId, messages });
       if (!res.ok) { alert("採点処理でエラーが発生しました。"); setEvaluating(false); return; }
       const score = await res.json();
       navigate("/result", { state: { caseId, messages, score } });

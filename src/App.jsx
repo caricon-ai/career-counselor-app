@@ -184,7 +184,7 @@ export default function App() {
         {/* ログイン＋サブスクリプション必須ページ */}
         <Route path="/scenario" element={session ? <Scenario username={profile?.username} loginStreak={profile?.login_streak} /> : <Login />} />
         <Route path="/profile-edit" element={session ? <ProfileEdit profile={profile} userId={session.user.id} onUpdate={(p) => setProfile(p)} /> : <Login />} />
-        <Route path="/manage-subscription" element={session ? <ManageSubscription session={session} /> : <Login />} />
+        <Route path="/manage-subscription" element={session ? <ManageSubscription /> : <Login />} />
         <Route path="/roleplay" element={session ? <RolePlay /> : <Login />} />
         <Route path="/result" element={session ? <Result /> : <Login />} />
 

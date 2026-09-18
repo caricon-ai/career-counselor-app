@@ -1,17 +1,17 @@
 import Stripe from "stripe";
+import { requireUser } from "./_auth.js";
 
 export async function onRequestPost(context) {
   const { request, env } = context;
 
   try {
-    const { userEmail } = await request.json();
-
-    if (!userEmail) {
-      return Response.json({ error: "メールアドレスが必要です" }, { status: 400 });
-    }
+    // 本人確認済みのメールアドレスで顧客を検索する（他人の解約ページを開けないようにする）
+    const auth = await requireUser(request, env);
+    if (auth.error) return auth.error;
+    const userEmail = auth.user.email;
 
     const stripe = new Stripe(env.STRIPE_SECRET_KEY);
-    const appUrl = env.VITE_APP_URL || "https://career-counselor-app-two.vercel.app";
+    const appUrl = env.VITE_APP_URL || "https://career-counselor-app.caricon.workers.dev";
 
     // メールアドレスからStripeの顧客IDを検索する
     const customers = await stripe.customers.list({ email: userEmail, limit: 1 });

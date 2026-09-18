@@ -1,11 +1,5 @@
 import OpenAI from "openai";
-
-// CORSヘッダー（ブラウザからのアクセスを許可するための設定）
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
+import { CORS, requireSubscriber } from "./_auth.js";
 
 // ブラウザの事前確認リクエスト（OPTIONSメソッド）への応答
 export async function onRequestOptions() {
@@ -17,6 +11,9 @@ export async function onRequestPost(context) {
   const { request, env } = context;
 
   try {
+    const auth = await requireSubscriber(request, env);
+    if (auth.error) return auth.error;
+
     const { messages, caseDisplayName } = await request.json();
 
     if (!Array.isArray(messages)) {

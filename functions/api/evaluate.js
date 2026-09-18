@@ -1,10 +1,5 @@
 import OpenAI from "openai";
-
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
+import { CORS, requireSubscriber } from "./_auth.js";
 
 // JSONテキストを抽出する（AIがコードブロックで囲んで返した場合にも対応）
 function extractJson(text) {
@@ -24,6 +19,9 @@ export async function onRequestPost(context) {
   const { request, env } = context;
 
   try {
+    const auth = await requireSubscriber(request, env);
+    if (auth.error) return auth.error;
+
     const { messages, caseId } = await request.json();
 
     if (!Array.isArray(messages)) {
