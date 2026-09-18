@@ -1,6 +1,6 @@
 // src/pages/History.jsx - 練習履歴（採点結果の一覧とスコア推移）
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { scenarios } from "../data/scenarios";
 
@@ -11,7 +11,14 @@ const CATEGORIES = [
   { key: "action", label: "具体的展開力", color: "#eda100" },
 ];
 
-const PASS_SCORE = 7;
+const PASS_SCORE = 60;
+
+// 旧形式（version無し・1〜9点）は100点満点に換算する
+function normalize(score, version) {
+  const n = Number(score);
+  if (!Number.isFinite(n)) return null;
+  return version ? Math.round(n) : Math.round((n * 100) / 9);
+}
 
 function caseName(caseId) {
   return scenarios.find((s) => s.id === caseId)?.name || "不明";
@@ -32,7 +39,8 @@ function TrendChart({ rows, isMobile }) {
   const n = rows.length;
 
   const x = (i) => (n === 1 ? pad.left + plotW / 2 : pad.left + (plotW * i) / (n - 1));
-  const y = (score) => pad.top + plotH - ((score - 1) / 8) * plotH;
+  const y = (score) => pad.top + plotH - (score / 100) * plotH;
+  const val = (r, key) => normalize(r.summary?.[key]?.score, r.version);
 
   return (
     <div style={{ position: "relative" }}>
@@ -48,13 +56,13 @@ function TrendChart({ rows, isMobile }) {
 
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }} onMouseLeave={() => setHover(null)}>
         {/* 目盛り線（控えめに） */}
-        {[1, 3, 5, 7, 9].map((v) => (
+        {[0, 20, 40, 60, 80, 100].map((v) => (
           <g key={v}>
             <line x1={pad.left} x2={W - pad.right} y1={y(v)} y2={y(v)} stroke={v === PASS_SCORE ? "#9ca3af" : "#e5e7eb"} strokeDasharray={v === PASS_SCORE ? "4 4" : undefined} />
             <text x={pad.left - 8} y={y(v) + 4} textAnchor="end" fontSize="11" fill="#6b7280">{v}</text>
           </g>
         ))}
-        <text x={W - pad.right} y={y(PASS_SCORE) - 5} textAnchor="end" fontSize="11" fill="#6b7280">合格圏（7以上）</text>
+        <text x={W - pad.right} y={y(PASS_SCORE) - 5} textAnchor="end" fontSize="11" fill="#6b7280">合格ライン（{PASS_SCORE}点）</text>
 
         {/* 横軸ラベル：回数 */}
         {rows.map((r, i) => (
@@ -70,7 +78,7 @@ function TrendChart({ rows, isMobile }) {
 
         {/* 折れ線とマーカー */}
         {CATEGORIES.map((c) => {
-          const pts = rows.map((r, i) => [x(i), y(r.summary?.[c.key]?.score ?? 1)]);
+          const pts = rows.map((r, i) => [x(i), y(val(r, c.key) ?? 0)]);
           return (
             <g key={c.key}>
               {n > 1 && (
@@ -115,7 +123,7 @@ function TrendChart({ rows, isMobile }) {
           {CATEGORIES.map((c) => (
             <div key={c.key} style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ width: 8, height: 8, borderRadius: 99, background: c.color, display: "inline-block" }} />
-              {c.label}：{rows[hover].summary?.[c.key]?.score ?? "-"}
+              {c.label}：{val(rows[hover], c.key) ?? "-"}点
             </div>
           ))}
         </div>
@@ -126,9 +134,10 @@ function TrendChart({ rows, isMobile }) {
 
 export default function History() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [rows, setRows] = useState(null);
   const [error, setError] = useState("");
-  const [caseFilter, setCaseFilter] = useState("all");
+  const [caseFilter, setCaseFilter] = useState(() => searchParams.get("case") || "all");
   const [openingId, setOpeningId] = useState(null);
 
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
@@ -141,7 +150,7 @@ export default function History() {
   useEffect(() => {
     supabase
       .from("results")
-      .select("id, case_id, created_at, summary:score->summary")
+      .select("id, case_id, created_at, summary:score->summary, version:score->version")
       .order("created_at", { ascending: false })
       .limit(100)
       .then(({ data, error }) => {
@@ -240,8 +249,8 @@ export default function History() {
                         <td style={{ padding: "10px 6px", color: "#374151", whiteSpace: "nowrap" }}>{formatDate(r.created_at)}</td>
                         <td style={{ padding: "10px 6px", color: "#1f2937", whiteSpace: "nowrap" }}>{caseName(r.case_id)}</td>
                         {CATEGORIES.map((c) => {
-                          const s = r.summary?.[c.key]?.score;
-                          const pass = s >= PASS_SCORE;
+                          const s = normalize(r.summary?.[c.key]?.score, r.version);
+                          const pass = s !== null && s >= PASS_SCORE;
                           return (
                             <td key={c.key} style={{ padding: "10px 6px", textAlign: "center", fontWeight: "bold", color: pass ? "#15803d" : "#dc2626" }}>
                               {s ?? "-"}

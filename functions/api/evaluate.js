@@ -11,6 +11,31 @@ function extractJson(text) {
   return text;
 }
 
+// 会話ログを「CC1 / CL1」のように話者ごとの通し番号付きで整形する
+function buildTranscript(messages) {
+  let cc = 0;
+  let cl = 0;
+  return messages
+    .map((m) => {
+      const isCC = m.role === "user";
+      const label = isCC ? `CC${++cc}` : `CL${++cl}`;
+      return `[${label}] ${String(m.content || "")}`;
+    })
+    .join("\n");
+}
+
+// 同じケースの過去の練習結果（総数と、直近5回分の内容）を集める
+async function loadPastAttempts(supabase, userId, caseId) {
+  const { data, count } = await supabase
+    .from("results")
+    .select("created_at, score", { count: "exact" })
+    .eq("user_id", userId)
+    .eq("case_id", caseId)
+    .order("created_at", { ascending: false })
+    .limit(5);
+  return { rows: (data || []).reverse(), count: count ?? (data || []).length };
+}
+
 export async function onRequestOptions() {
   return new Response(null, { status: 200, headers: CORS });
 }
@@ -22,161 +47,89 @@ export async function onRequestPost(context) {
     const auth = await requireSubscriber(request, env);
     if (auth.error) return auth.error;
 
-    const { messages, caseId } = await request.json();
+    const { messages, caseId, caseName, caseText } = await request.json();
 
     if (!Array.isArray(messages)) {
       return Response.json({ error: "messages must be an array" }, { status: 400, headers: CORS });
     }
 
     const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
+    const transcript = buildTranscript(messages);
+    const ccCount = messages.filter((m) => m.role === "user").length;
 
-    const transcript = messages
-      .map((m, i) => {
-        const speaker = m.role === "user" ? "あなた(CC)" : "相談者(CL)";
-        return `${i}. ${speaker}: ${String(m.content || "")}`;
+    const { rows: past, count: pastCount } = await loadPastAttempts(auth.supabase, auth.user.id, caseId || "unknown");
+    const attempt = pastCount + 1;
+    const firstShownRp = pastCount - past.length + 1;
+    const pastSummary = past
+      .map((p, idx) => {
+        const i = firstShownRp + idx - 1;
+        const s = p.score || {};
+        const avg = s.summary
+          ? Math.round(Object.values(s.summary).reduce((a, v) => a + (Number(v.score) || 0), 0) / 4)
+          : null;
+        const issues = (s.ngPoints || []).map((n) => n.title).filter(Boolean).join("／");
+        const legacy = s.mainIssue?.title;
+        return `RP${i + 1}（平均${avg ?? "?"}点）：改善点＝${issues || legacy || "記録なし"}`;
       })
       .join("\n");
 
     const system = `
-あなたは「キャリアコンサルティング技能検定2級（面接）」の
-試験官の評価思想を完全に理解している指導者AIです。
+あなたは「キャリアコンサルティング技能検定2級（面接）」の試験官の評価思想を完全に理解し、
+受検者を合格に導く指導者AIです。
 
-以下の会話ログを読み、
-「あなた(CC)」の発話のみを評価してください。
-※「相談者(CL)」の発話は評価対象外です。
-
-評価は、協議会基準に基づく次の4区分で行います。
-
-- basic：基本的態度
-- relation：関係構築力
-- analysis：問題把握力
-- action：具体的展開力
+以下の会話ログを読み、「CC（キャリアコンサルタント＝受検者）」の発話のみを評価してください。
+CL（相談者）の発話は評価対象外です。発話は [CC3] [CL3] のように番号付きです。
+発話を指す場合は必ずこの番号（例：CC3）を使ってください。
 
 ---
+【評価区分と採点】
+協議会基準の4区分で、各区分を 0〜100 点で採点します。
+- basic：基本的態度（受容・共感・自己一致、態度の一貫性、名乗り・導入）
+- relation：関係構築力（安心して語れる関係、感情への応答、語りの深まり）
+- analysis：問題把握力（要約と仮説、相談者が語る問題とCC視点の問題の両方の把握）
+- action：具体的展開力（焦点化、比較軸、行動化、相談者の主体的な意思決定の支援）
 
-【このAIの立場】
+点数の目安：
+- 75〜100：安定した到達（質を伴い、相談者の理解・整理が進んでいる）
+- 60〜74：到達（方向性が正しく技能も出ているが、深さ・精度に余地）
+- 50〜59：惜しい未達（方向性は正しいが、仮説が浅い／比較が形式的／行動化が抽象的）
+- 0〜49：明確な未達（表面的対応、助言偏重、質問攻め、整理不足）
+result は 60 以上なら「到達」、60 未満なら「所要基準未達」。
+会話が極端に短い（CC発話が3回未満）場合は、実施できた範囲だけを評価し、点数は低くてよい。
 
-- 試験官の評価基準を忠実に用いる
-- ただし結果は「指導者」として返す
-- なぜA／B／Cなのか、次に何を直せばよいかを明確に示す
+【発話タグ（perTurn）】
+- 学習上意味のあるCC発話だけを選び、最大8件
+- tag は good（◎ 良い場面）／caution（△ 注意）／ng（✕ 改善必要）
+- label は「◎ プレッシャーへの共感からやりがいの探索へ自然に展開」のように記号＋短い自然文
 
----
+【良かった点・改善点】
+- goodPoints：3〜5件。cc番号・見出し・具体的な解説（なぜ良いか、相談者にどう作用したか）
+- ngPoints：2〜4件。priority は high／medium。cc番号・見出し・解説。
+  better には「その場面で実際に使える問いかけ例」を相談者に言う口調で1文書く
+- 過去の練習記録がある場合、同じ課題が繰り返されていれば必ず「RP◯から継続」「◯回連続」と明記する。
+  改善が見られた点も「RP◯では〜だったが今回は〜できた」と明記する
 
-【点数と判定】
+【次の課題（priorities）】
+- 次回の練習で取り組む優先課題を3つ、優先順位付きで。label は行動レベル、detail は練習方法まで
 
-- score は 1〜9 の整数（10は絶対に使わない）
-- 7・8：A評価（到達・合格圏）
-- 5：B評価（惜しい未達）
-- 3・4：C評価（明確な未達）
-- 6は絶対に使用しない（禁止）。6を出力した場合は採点ミスとみなす
-
-result は必ず
-「到達」または「所要基準未達」で示すこと。
-
----
-
-【三段構え評価テンプレ（最重要）】
-
-■ A評価（到達）
-- 評価項目が質を伴って満たされている
-- 相談者の理解・整理・意思決定が進んでいる
-
-コメント方針：
-① 水準の高さを明確に伝える
-② なぜ合格圏かを説明する
-③ 試験官視点で「合格可能性が高い」と言及する
-④ さらに伸ばす行動を2〜3個示す
-
----
-
-■ B評価（惜しい未達）
-- 面接の方向性は正しい
-- 共感・質問・要約などの技能は出ている
-- ただし次のいずれかが不足している
-
-  ・仮説（見立て）が浅い
-  ・比較が形式的
-  ・行動化が抽象的
-  ・焦点化が遅く時間切れ
-
-コメント方針：
-① 方向性が適切だったことを最初に伝える
-② mainIssue に該当する弱点を具体的に示す
-③ 「ここが改善されていればAだった」と明言する
-④ 次にやる行動を2〜3個、行動レベルで示す
-
----
-
-■ C評価（明確な未達）
-- 必須観点が十分に満たされていない
-- 表面的対応、助言偏重、整理不足が目立つ
-
-コメント方針：
-① 事実として基準未達であることを伝える
-② 何が足りなかったかを具体的に示す
-③ 試験官視点で「合格水準に届かない」と明言する
-④ 基本的な改善行動を2〜3個示す
-
----
-
-【各評価区分の判断基準】
-
-◆ basic（基本的態度）
-- A：共感・受容が自然で一貫している
-- B：態度は良いが感情への踏み込みが浅い
-- C：否定・誘導・結論急ぎが見られる
-
-◆ relation（関係構築力）
-- A：語りが深まり感情や背景が出ている
-- B：関係は成立しているが深化が不足
-- C：質問攻め・詰問になっている
-
-◆ analysis（問題把握力）
-- A：要約と仮説があり核心に迫っている
-- B：整理はあるが見立てが弱い
-- C：表面課題止まり・概念語ラベリング
-
-◆ action（具体的展開力）
-- A：比較軸が明確で判断材料が整理されている
-- B：方向性はあるが比較・行動が浅い
-- C：助言羅列・抽象助言で終わる
-
----
-
-【逐語（perTurn）の扱い】
-
-- 全発話は評価しない
-- 学習上意味のある CC 発話のみを選ぶ
-- 1発話につき最大2タグ
-- tag.label はUI用の自然文
-- grade は A / B / C
-- reason は1文で簡潔に
-
----
+【coachHint】
+- 指導者から受検者への一言（3〜5文）。今回最も評価できる介入を1つ具体的に挙げ、
+  最優先で直す1点を「次回はこの一言を言えれば」という形で示す
 
 【NG（未達に直結）】
-
-- 形だけ共感
-- 質問攻め
-- 表面課題止まり
-- 仮説ゼロ
-- 焦点化不足
-- 助言の羅列
-- 抽象助言止まり
-- 早すぎる結論・誘導
-
----
+形だけ共感／質問攻め／表面課題止まり／仮説ゼロ／焦点化不足／助言の羅列／抽象助言止まり／早すぎる結論・誘導
 
 【出力ルール】
-
-- 指定されたJSON形式のみを出力
-- 説明文・前置きは一切付けない
-- mainIssue は必ず1つ
-- improve は mainIssue の区分のみ 2〜3個
+- 指定されたJSON形式のみを出力。説明文・前置きは一切付けない
+- 文章はすべて日本語
 `.trim();
 
     const user = `
-caseId: ${caseId || "unknown"}
+ケース：${caseName || caseId || "不明"}
+${caseText ? `相談内容：${caseText}\n` : ""}
+今回は同じケースの ${attempt} 回目の練習です（RP${attempt}）。
+${past.length ? `過去の練習記録：\n${pastSummary}\n` : "過去の練習記録はありません。\n"}
+CC発話数：${ccCount}
 
 会話ログ：
 ${transcript}
@@ -184,32 +137,24 @@ ${transcript}
 【出力は必ず次のJSONのみ】（前後に文章を付けない）
 {
   "summary": {
-    "basic":   { "score": number, "result": "到達"|"所要基準未達" },
-    "relation":{ "score": number, "result": "到達"|"所要基準未達" },
-    "analysis":{ "score": number, "result": "到達"|"所要基準未達" },
-    "action":  { "score": number, "result": "到達"|"所要基準未達" }
+    "basic":    { "score": number, "result": "到達"|"所要基準未達", "comment": string },
+    "relation": { "score": number, "result": "到達"|"所要基準未達", "comment": string },
+    "analysis": { "score": number, "result": "到達"|"所要基準未達", "comment": string },
+    "action":   { "score": number, "result": "到達"|"所要基準未達", "comment": string }
   },
-  "mainIssue": { "key": "basic"|"relation"|"analysis"|"action", "title": string, "reason": string },
-  "evaluations": {
-    "basic":   { "good": string[], "bad": string[], "improve": string[] },
-    "relation":{ "good": string[], "bad": string[], "improve": string[] },
-    "analysis":{ "good": string[], "bad": string[], "improve": string[] },
-    "action":  { "good": string[], "bad": string[], "improve": string[] }
-  },
-  "perTurn": [
-    {
-      "index": number,
-      "tags": [
-        { "label": string, "grade": "A"|"B"|"C", "reason": string }
-      ]
-    }
-  ]
+  "overall": string,
+  "perTurn": [ { "cc": number, "tag": "good"|"caution"|"ng", "label": string } ],
+  "goodPoints": [ { "cc": number, "title": string, "detail": string } ],
+  "ngPoints": [ { "cc": number, "priority": "high"|"medium", "title": string, "detail": string, "better": string } ],
+  "priorities": [ { "rank": 1|2|3, "label": string, "detail": string } ],
+  "coachHint": string
 }
 `.trim();
 
     const completion = await openai.chat.completions.create({
       model: env.OPENAI_MODEL || "gpt-4o-mini",
       temperature: 0.2,
+      response_format: { type: "json_object" },
       messages: [
         { role: "system", content: system },
         { role: "user", content: user },
@@ -217,12 +162,20 @@ ${transcript}
     });
 
     const raw = completion.choices?.[0]?.message?.content ?? "";
-    const jsonText = extractJson(raw);
-    const score = JSON.parse(jsonText);
+    const score = JSON.parse(extractJson(raw));
 
-    if (!score?.summary?.basic || !score?.mainIssue || !score?.evaluations) {
+    if (!score?.summary?.basic || !Array.isArray(score?.perTurn) || !Array.isArray(score?.ngPoints)) {
       return Response.json({ error: "invalid score json from model", raw }, { status: 500, headers: CORS });
     }
+
+    // 点数を整数・0〜100に揃え、到達判定を点数から機械的に決める（AIの表記ゆれを防ぐ）
+    for (const key of ["basic", "relation", "analysis", "action"]) {
+      const s = score.summary[key] || (score.summary[key] = { score: 0 });
+      s.score = Math.max(0, Math.min(100, Math.round(Number(s.score) || 0)));
+      s.result = s.score >= 60 ? "到達" : "所要基準未達";
+    }
+    score.attempt = attempt;
+    score.version = 2; // 採点形式のバージョン（1〜9点の旧形式と区別する）
 
     // 採点結果を履歴として保存する（保存に失敗しても採点結果自体は返す）
     let resultId = null;

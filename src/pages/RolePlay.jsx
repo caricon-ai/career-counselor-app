@@ -106,9 +106,11 @@ export default function RolePlay() {
     if (evaluating) return;
     setEvaluating(true);
     try {
-      const res = await apiPost("/api/evaluate", { caseId, messages });
+      const res = await apiPost("/api/evaluate", { caseId, messages, caseName: caseLabel, caseText });
       if (!res.ok) { alert("採点処理でエラーが発生しました。"); setEvaluating(false); return; }
       const score = await res.json();
+      // 採点が済んだ会話は自動保存から消し、次回は最初から始められるようにする
+      try { localStorage.removeItem(SAVE_KEY); } catch { /* 保存領域が使えない環境では無視 */ }
       navigate("/result", { state: { caseId, messages, score } });
     } catch {
       alert("通信エラーが発生しました。");
