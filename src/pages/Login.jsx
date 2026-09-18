@@ -19,7 +19,8 @@ function toJapaneseError(message) {
     return "しばらく時間をおいてから再度お試しください。";
   if (message.includes("Network") || message.includes("fetch"))
     return "通信エラーが発生しました。インターネット接続を確認してください。";
-  return "エラーが発生しました。もう一度お試しください。";
+  // 訳せないエラーは原因調査のため原文も添える
+  return `エラーが発生しました。もう一度お試しください。（詳細: ${message}）`;
 }
 
 // 新規登録時のステップ表示
