@@ -113,7 +113,8 @@ export default function Record() {
 
   // 録音セグメント（webm/mp4）→ WAV → アップロード
   const handleSegmentBlob = async (ph, seq, offset, blob) => {
-    if (!blob || blob.size === 0) return;
+    // 空の録音（マイクが音を拾えなかった等）は「文字なし」として完了扱いにし、処理が止まらないようにする
+    if (!blob || blob.size === 0) { upsertChunk(ph, seq, { offset, status: "done", text: "", segments: [] }); return; }
     upsertChunk(ph, seq, { offset, status: "converting" });
     try {
       const wavs = await blobToWavChunks(blob, CHUNK_SECONDS + 60); // 1セグメント＝1チャンク

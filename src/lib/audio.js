@@ -4,29 +4,56 @@
 export const TARGET_RATE = 16000;
 export const CHUNK_SECONDS = 300; // 5分ごと
 
-// Blob → AudioBuffer（16kHz・モノラル）
+// Blob → { samples(Float32Array, 16kHz モノラル) }
 export async function decodeTo16k(blob) {
   const arrayBuffer = await blob.arrayBuffer();
-  // OfflineAudioContext の sampleRate を 16k にすると、デコード時にその周波数へ変換される
-  const Ctx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
-  const ctx = new Ctx(1, 1, TARGET_RATE);
-  const decoded = await new Promise((resolve, reject) => {
-    // Safari 対策：コールバック形式で呼ぶ
-    const p = ctx.decodeAudioData(arrayBuffer, resolve, reject);
-    if (p && typeof p.then === "function") p.then(resolve, reject);
-  });
-  return toMono(decoded);
+  const decoded = await decodeAudio(arrayBuffer);
+  const mono = toMono(decoded);
+  const samples = resample(mono, decoded.sampleRate, TARGET_RATE);
+  return { samples, sampleRate: TARGET_RATE };
+}
+
+// ブラウザ標準の周波数でデコードする（Safariは16kHzのコンテキストを作れないため、変換は自前で行う）
+async function decodeAudio(arrayBuffer) {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  const ctx = new Ctx();
+  try {
+    return await new Promise((resolve, reject) => {
+      // Safari対策：コールバック形式とPromise形式の両方に対応
+      const p = ctx.decodeAudioData(arrayBuffer.slice(0), resolve, reject);
+      if (p && typeof p.then === "function") p.then(resolve, reject);
+    });
+  } finally {
+    try { await ctx.close(); } catch { /* 無視 */ }
+  }
 }
 
 // 複数チャンネルを平均してモノラルの Float32Array にする
 function toMono(audioBuffer) {
-  const { numberOfChannels, length, sampleRate } = audioBuffer;
+  const { numberOfChannels, length } = audioBuffer;
+  if (numberOfChannels === 1) return audioBuffer.getChannelData(0);
   const out = new Float32Array(length);
   for (let ch = 0; ch < numberOfChannels; ch++) {
     const data = audioBuffer.getChannelData(ch);
     for (let i = 0; i < length; i++) out[i] += data[i] / numberOfChannels;
   }
-  return { samples: out, sampleRate };
+  return out;
+}
+
+// 周波数変換（区間平均による簡易ローパス付きの間引き。音声認識用途には十分）
+function resample(input, fromRate, toRate) {
+  if (fromRate === toRate) return input;
+  const ratio = fromRate / toRate;
+  const outLen = Math.floor(input.length / ratio);
+  const out = new Float32Array(outLen);
+  for (let i = 0; i < outLen; i++) {
+    const start = Math.floor(i * ratio);
+    const end = Math.min(input.length, Math.floor((i + 1) * ratio));
+    let sum = 0;
+    for (let j = start; j < end; j++) sum += input[j];
+    out[i] = end > start ? sum / (end - start) : 0;
+  }
+  return out;
 }
 
 // Float32Array → WAV(16bit PCM) Blob
