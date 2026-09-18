@@ -30,8 +30,21 @@ export default function Scenario({ username, loginStreak }) {
           )}
         </div>
       )}
+      {/* 人と練習した録音の採点 */}
+      <div
+        onClick={() => navigate("/record")}
+        style={{ background: "linear-gradient(135deg, #fff1f2, #ffe4e6)", border: "1.5px solid #fecdd3", borderRadius: 14, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }}
+      >
+        <div style={{ fontSize: 32 }}>🎙</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: "bold", fontSize: 16, color: "#9f1239", marginBottom: 2 }}>録音して採点</div>
+          <div style={{ fontSize: 13, color: "#881337", lineHeight: 1.6 }}>人と練習したロープレを録音するだけで、逐語録と採点レポートを自動作成</div>
+        </div>
+        <div style={{ color: "#be123c", fontWeight: "bold" }}>→</div>
+      </div>
+
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 10 }}>
-        <h1 style={{ fontSize: 24, margin: 0 }}>ケース一覧</h1>
+        <h1 style={{ fontSize: 24, margin: 0 }}>AIと練習：ケース一覧</h1>
         <button
           onClick={() => navigate("/history")}
           style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #bfdbfe", background: "#eff6ff", color: "#1d4ed8", fontSize: 13, fontWeight: "bold", cursor: "pointer" }}

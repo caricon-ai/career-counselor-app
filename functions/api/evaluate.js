@@ -47,11 +47,17 @@ export async function onRequestPost(context) {
     const auth = await requireSubscriber(request, env);
     if (auth.error) return auth.error;
 
-    const { messages, caseId, caseName, caseText, caseStatus, evaluationPoints } = await request.json();
+    const {
+      messages, caseId, caseName, caseText, caseStatus, evaluationPoints,
+      source = "chat", subjectName = "", oral = null,
+    } = await request.json();
 
     if (!Array.isArray(messages)) {
       return Response.json({ error: "messages must be an array" }, { status: 400, headers: CORS });
     }
+    const isRecording = source === "recording";
+    const hasOral = Array.isArray(oral) && oral.length > 0;
+    const isFreeCase = !caseId || caseId === "free";
 
     const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
     const transcript = buildTranscript(messages);
@@ -119,23 +125,42 @@ result は 60 以上なら「到達」、60 未満なら「所要基準未達」
 【NG（未達に直結）】
 形だけ共感／質問攻め／表面課題止まり／仮説ゼロ／焦点化不足／助言の羅列／抽象助言止まり／早すぎる結論・誘導
 
+${isRecording ? `
+【録音の評価について】
+- この会話は人間同士のロールプレイを録音し文字起こししたものです。言いよどみ・相槌・誤変換が含まれます
+- 文字起こしの乱れ自体は減点しない。発話の意図と流れで評価する
+` : ""}${hasOral ? `
+【口頭試問（oralEval）】
+- 口頭試問の記録も評価する。試験官の質問ごとに受検者の回答を grade（○＝十分／△＝不足あり／✕＝不十分）で評価し、
+  comment に一言、better に「さらに上を目指す回答例」を受検者の口調で3〜5文書く
+- 口頭試問の内容は analysis（問題把握力）の採点にも反映する（試験官がロープレ中の見立てを確認する場だから）
+` : ""}${isFreeCase ? `
+【caseSummary】
+- 相談者が語った状況と主訴を、試験のケース紹介文のように3〜4文で要約する（相談者の年齢・立場・きっかけ・迷いの内容）
+` : ""}
 【出力ルール】
 - 指定されたJSON形式のみを出力。説明文・前置きは一切付けない
 - 文章はすべて日本語
 `.trim();
+
+    const oralText = hasOral
+      ? `\n口頭試問の記録：\n${oral.map((o, i) => `[${o.speaker === "試験官" ? `Q${Math.floor(i / 2) + 1} 試験官` : "受検者"}] ${String(o.text || "")}`).join("\n")}\n`
+      : "";
 
     const user = `
 ケース：${caseName || caseId || "不明"}
 ${caseStatus ? `相談者の状況：${caseStatus}\n` : ""}${caseText ? `相談内容：${caseText}\n` : ""}${Array.isArray(evaluationPoints) && evaluationPoints.length ? `このケースの評価ポイント：\n${evaluationPoints.map((p) => `- ${p}`).join("\n")}\n` : ""}
 今回は同じケースの ${attempt} 回目の練習です（RP${attempt}）。
 ${past.length ? `過去の練習記録：\n${pastSummary}\n` : "過去の練習記録はありません。\n"}
-CC発話数：${ccCount}
+${subjectName ? `受検者（CC役）：${subjectName}\n` : ""}${isRecording ? "形式：人間同士のロールプレイ録音の文字起こし\n" : ""}CC発話数：${ccCount}
 
 会話ログ：
 ${transcript}
-
+${oralText}
 【出力は必ず次のJSONのみ】（前後に文章を付けない）
-{
+{${isFreeCase ? `
+  "caseSummary": string,` : ""}${hasOral ? `
+  "oralEval": [ { "q": string, "grade": "○"|"△"|"✕", "comment": string, "better": string } ],` : ""}
   "summary": {
     "basic":    { "score": number, "result": "到達"|"所要基準未達", "comment": string },
     "relation": { "score": number, "result": "到達"|"所要基準未達", "comment": string },
@@ -176,6 +201,15 @@ ${transcript}
     }
     score.attempt = attempt;
     score.version = 2; // 採点形式のバージョン（1〜9点の旧形式と区別する）
+    score.meta = { source, subjectName: String(subjectName || "").slice(0, 50) };
+    if (hasOral) {
+      score.oral = {
+        transcript: oral.map((o) => ({ speaker: o.speaker === "試験官" ? "試験官" : "受検者", text: String(o.text || "") })),
+        eval: Array.isArray(score.oralEval) ? score.oralEval : [],
+      };
+      delete score.oralEval;
+    }
+    if (isFreeCase && typeof score.caseSummary !== "string") score.caseSummary = "";
 
     // 採点結果を履歴として保存する（保存に失敗しても採点結果自体は返す）
     let resultId = null;

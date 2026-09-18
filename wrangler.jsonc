@@ -7,6 +7,10 @@
   "observability": {
     "enabled": true
   },
+  // Cloudflare内蔵AI（Whisper文字起こし）を使うための設定
+  "ai": {
+    "binding": "AI"
+  },
   // 3日ごと（0時UTC）にSupabaseへアクセスして一時停止を防ぐ
   "triggers": {
     "crons": ["0 0 */3 * *"]

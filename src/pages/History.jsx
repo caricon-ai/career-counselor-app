@@ -20,7 +20,8 @@ function normalize(score, version) {
   return version ? Math.round(n) : Math.round((n * 100) / 9);
 }
 
-function caseName(caseId) {
+function caseName(caseId, meta) {
+  if (caseId === "free") return meta?.subjectName ? `${meta.subjectName}さんのロープレ` : "自由ケース（録音）";
   return scenarios.find((s) => s.id === caseId)?.name || "不明";
 }
 
@@ -119,7 +120,7 @@ function TrendChart({ rows, isMobile }) {
           whiteSpace: "nowrap",
         }}>
           <div style={{ fontWeight: "bold", marginBottom: 4 }}>{hover + 1}回目 · {formatDate(rows[hover].created_at)}</div>
-          <div style={{ color: "#6b7280", marginBottom: 4 }}>{caseName(rows[hover].case_id)}</div>
+          <div style={{ color: "#6b7280", marginBottom: 4 }}>{rows[hover].meta?.source === "recording" ? "🎙 " : ""}{caseName(rows[hover].case_id, rows[hover].meta)}</div>
           {CATEGORIES.map((c) => (
             <div key={c.key} style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ width: 8, height: 8, borderRadius: 99, background: c.color, display: "inline-block" }} />
@@ -150,7 +151,7 @@ export default function History() {
   useEffect(() => {
     supabase
       .from("results")
-      .select("id, case_id, created_at, summary:score->summary, version:score->version")
+      .select("id, case_id, created_at, summary:score->summary, version:score->version, meta:score->meta")
       .order("created_at", { ascending: false })
       .limit(100)
       .then(({ data, error }) => {
@@ -176,7 +177,7 @@ export default function History() {
     const { data, error } = await supabase.from("results").select("case_id, score, messages, created_at").eq("id", id).single();
     setOpeningId(null);
     if (error || !data) { alert("結果の読み込みに失敗しました。"); return; }
-    navigate("/result", { state: { caseId: data.case_id, score: data.score, messages: data.messages, createdAt: data.created_at } });
+    navigate("/result", { state: { caseId: data.case_id, score: data.score, messages: data.messages, createdAt: data.created_at, resultId: id } });
   };
 
   const cardStyle = { background: "#fff", borderRadius: 14, padding: isMobile ? 16 : 24, boxShadow: "0 4px 16px rgba(0,0,0,0.06)", marginBottom: 16 };
@@ -215,7 +216,7 @@ export default function History() {
               <select value={caseFilter} onChange={(e) => setCaseFilter(e.target.value)} style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid #d1d5db", fontSize: 13, background: "#fff" }}>
                 <option value="all">すべて（{rows.length}回）</option>
                 {usedCaseIds.map((id) => (
-                  <option key={id} value={id}>{caseName(id)}（{rows.filter((r) => r.case_id === id).length}回）</option>
+                  <option key={id} value={id}>{id === "free" ? "録音（自由ケース）" : caseName(id)}（{rows.filter((r) => r.case_id === id).length}回）</option>
                 ))}
               </select>
             </div>
@@ -247,7 +248,7 @@ export default function History() {
                     {filtered.map((r) => (
                       <tr key={r.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
                         <td style={{ padding: "10px 6px", color: "#374151", whiteSpace: "nowrap" }}>{formatDate(r.created_at)}</td>
-                        <td style={{ padding: "10px 6px", color: "#1f2937", whiteSpace: "nowrap" }}>{caseName(r.case_id)}</td>
+                        <td style={{ padding: "10px 6px", color: "#1f2937", whiteSpace: "nowrap" }}>{r.meta?.source === "recording" ? "🎙 " : ""}{caseName(r.case_id, r.meta)}</td>
                         {CATEGORIES.map((c) => {
                           const s = normalize(r.summary?.[c.key]?.score, r.version);
                           const pass = s !== null && s >= PASS_SCORE;

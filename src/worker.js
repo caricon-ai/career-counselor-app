@@ -3,6 +3,24 @@ import { onRequestPost as evaluatePost } from '../functions/api/evaluate.js';
 import { onRequestPost as checkoutPost } from '../functions/api/create-checkout-session.js';
 import { onRequestPost as webhookPost } from '../functions/api/stripe-webhook.js';
 import { onRequestPost as portalPost } from '../functions/api/create-portal-session.js';
+import { onRequestPost as transcribePost } from '../functions/api/transcribe.js';
+import { onRequestPost as separatePost } from '../functions/api/separate.js';
+import { onRequestGet as shareGet, onRequestPost as sharePost } from '../functions/api/share.js';
+
+const POST_ROUTES = {
+  '/api/chat': chatPost,
+  '/api/evaluate': evaluatePost,
+  '/api/create-checkout-session': checkoutPost,
+  '/api/stripe-webhook': webhookPost,
+  '/api/create-portal-session': portalPost,
+  '/api/transcribe': transcribePost,
+  '/api/separate': separatePost,
+  '/api/share': sharePost,
+};
+
+const GET_ROUTES = {
+  '/api/share': shareGet,
+};
 
 export default {
   async fetch(request, env, ctx) {
@@ -15,7 +33,7 @@ export default {
         status: 200,
         headers: {
           'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
           'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         },
       });
@@ -24,20 +42,10 @@ export default {
     // APIリクエストのルーティング
     if (path.startsWith('/api/')) {
       const context = { request, env, ctx };
-      switch (path) {
-        case '/api/chat':
-          return chatPost(context);
-        case '/api/evaluate':
-          return evaluatePost(context);
-        case '/api/create-checkout-session':
-          return checkoutPost(context);
-        case '/api/stripe-webhook':
-          return webhookPost(context);
-        case '/api/create-portal-session':
-          return portalPost(context);
-        default:
-          return new Response('API not found', { status: 404 });
-      }
+      const table = request.method === 'GET' ? GET_ROUTES : POST_ROUTES;
+      const handler = table[path];
+      if (handler) return handler(context);
+      return new Response('API not found', { status: 404 });
     }
 
     // それ以外は静的ファイルを返す

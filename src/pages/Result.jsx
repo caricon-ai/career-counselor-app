@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { scenarios } from "../data/scenarios";
+import { apiPost } from "../lib/api";
 
 const CATEGORIES = [
   { key: "basic", label: "基本的態度", color: "#2a78d6" },
@@ -16,6 +17,7 @@ const TAG_STYLE = {
   caution: { bg: "#fff8e1", text: "#f57f17", border: "#ffd54f" },
   ng: { bg: "#ffebee", text: "#c62828", border: "#ef9a9a" },
 };
+const GRADE_STYLE = { "○": { bg: "#e8f5e9", text: "#2e7d32" }, "△": { bg: "#fff8e1", text: "#f57f17" }, "✕": { bg: "#ffebee", text: "#c62828" } };
 
 // 1〜50 を ①〜㊿ の丸数字にする
 function circled(n) {
@@ -55,11 +57,13 @@ function normalizeScore(score, messages) {
   return { ...score, summary, overall: score.mainIssue?.reason || "", perTurn, goodPoints, ngPoints, priorities, coachHint: "" };
 }
 
-export default function Result() {
+// レポート本体（結果ページと共有ページの両方で使う）
+export function ReportView({ score: rawScore, messages = [], caseId = "unknown", createdAt, resultId, shareMode = false }) {
   const navigate = useNavigate();
-  const location = useLocation();
   const [tab, setTab] = useState("score");
   const [showTags, setShowTags] = useState(true);
+  const [shareState, setShareState] = useState(""); // "" | "working" | "copied" | "error"
+  const [shareUrl, setShareUrl] = useState("");
 
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
   useEffect(() => {
@@ -68,19 +72,18 @@ export default function Result() {
     return () => window.removeEventListener("resize", handler);
   }, []);
 
-  useEffect(() => { if (!location.state) navigate("/"); }, [location.state, navigate]);
-  if (!location.state) return null;
-
-  const { messages = [], caseId = "unknown", createdAt } = location.state;
-  const score = normalizeScore(location.state.score, messages);
-  const caseLabel = scenarios.find((s) => s.id === caseId)?.name || "不明";
+  const score = normalizeScore(rawScore, messages);
+  const isRecording = score?.meta?.source === "recording";
+  const subjectName = score?.meta?.subjectName || "";
+  const caseLabel = caseId === "free"
+    ? (subjectName ? `${subjectName}さんのロープレ` : "自由ケース")
+    : (scenarios.find((s) => s.id === caseId)?.name || "不明");
   const dateLabel = new Date(createdAt || Date.now()).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
   if (!score) {
     return (
       <div style={{ padding: 40, textAlign: "center" }}>
         <h2>採点結果を読み込めませんでした</h2>
-        <button onClick={() => navigate("/scenario")} style={{ marginTop: 12, padding: "10px 20px", borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer" }}>ケース一覧へ</button>
       </div>
     );
   }
@@ -106,12 +109,34 @@ export default function Result() {
   });
   const scene = (cc) => (cc ? `CC${circled(cc)}` : "");
 
+  const share = async () => {
+    if (shareUrl) { await copy(shareUrl); return; }
+    if (!resultId) { setShareState("error"); return; }
+    setShareState("working");
+    try {
+      const res = await apiPost("/api/share", { resultId });
+      const data = await res.json();
+      if (!res.ok || !data.token) throw new Error(data.error || "share failed");
+      const url = `${window.location.origin}/share?token=${data.token}`;
+      setShareUrl(url);
+      await copy(url);
+    } catch (e) {
+      console.error(e);
+      setShareState("error");
+    }
+  };
+  const copy = async (url) => {
+    try { await navigator.clipboard.writeText(url); setShareState("copied"); }
+    catch { setShareState("shown"); }
+  };
+
   const card = { background: "#fff", borderRadius: 12, padding: isMobile ? 16 : 22, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", marginBottom: 14 };
   const btn = { padding: "8px 14px", borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", fontSize: 13, color: "#374151", whiteSpace: "nowrap" };
 
   const tabs = [
     { key: "score", label: "📊 評価スコア" },
     { key: "dialogue", label: "📝 逐語録" },
+    ...(score.oral ? [{ key: "oral", label: "🎤 口頭試問" }] : []),
     { key: "good", label: "✅ 良かった点" },
     { key: "ng", label: "⚠️ 改善点" },
     { key: "next", label: "🎯 次の課題" },
@@ -123,11 +148,14 @@ export default function Result() {
 
         {/* ヘッダー */}
         <div style={{ background: "linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)", borderRadius: 14, padding: isMobile ? "18px 18px" : "22px 26px", marginBottom: 14, color: "#fff" }}>
-          <div style={{ fontSize: 11, opacity: 0.75, marginBottom: 3 }}>2級キャリアコンサルティング技能検定 実技（面接）練習</div>
+          <div style={{ fontSize: 11, opacity: 0.75, marginBottom: 3 }}>2級キャリアコンサルティング技能検定 実技（面接）{isRecording ? "ロープレ録音の評価" : "練習"}</div>
           <div style={{ fontSize: isMobile ? 18 : 21, fontWeight: 700, marginBottom: 8 }}>
-            {caseLabel} ケース{score.attempt ? ` — RP${circled(score.attempt)}` : ""}
+            {caseLabel}{caseId !== "free" ? " ケース" : ""}{score.attempt ? ` — RP${circled(score.attempt)}` : ""}
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            {isRecording && <span style={{ background: "rgba(255,255,255,0.18)", borderRadius: 6, padding: "3px 10px", fontSize: 12 }}>🎙 録音</span>}
+            {subjectName && caseId !== "free" && <span style={{ background: "rgba(255,255,255,0.18)", borderRadius: 6, padding: "3px 10px", fontSize: 12 }}>受検者：{subjectName}さん</span>}
+            {score.oral && <span style={{ background: "rgba(255,255,255,0.18)", borderRadius: 6, padding: "3px 10px", fontSize: 12 }}>口頭試問あり</span>}
             <span style={{ background: "rgba(255,255,255,0.18)", borderRadius: 6, padding: "3px 10px", fontSize: 12 }}>実施：{dateLabel}</span>
             <span style={{ background: allPass ? "#ffeb3b" : "rgba(255,255,255,0.18)", color: allPass ? "#1e3a8a" : "#fff", borderRadius: 6, padding: "3px 10px", fontSize: 12, fontWeight: 700 }}>
               {allPass ? "🏆 全区分 合格圏・" : ""}平均{avg}点
@@ -136,12 +164,28 @@ export default function Result() {
         </div>
 
         {/* アクション */}
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
-          <button onClick={() => navigate(`/roleplay?case=${caseId}`)} style={{ ...btn, background: "linear-gradient(180deg,#2563eb,#1d4ed8)", color: "#fff", border: "none", fontWeight: "bold" }}>もう一度このケースで練習</button>
-          <button onClick={() => navigate(`/history?case=${caseId}`)} style={{ ...btn, background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1d4ed8" }}>📈 このケースの推移</button>
-          <button onClick={() => navigate("/scenario")} style={btn}>ケース一覧へ</button>
-          {!isMobile && <button onClick={() => window.print()} style={btn}>PDFで保存</button>}
-        </div>
+        {!shareMode && (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14, alignItems: "center" }}>
+            {isRecording
+              ? <button onClick={() => navigate("/record")} style={{ ...btn, background: "linear-gradient(180deg,#ef4444,#dc2626)", color: "#fff", border: "none", fontWeight: "bold" }}>🎙 新しく録音する</button>
+              : <button onClick={() => navigate(`/roleplay?case=${caseId}`)} style={{ ...btn, background: "linear-gradient(180deg,#2563eb,#1d4ed8)", color: "#fff", border: "none", fontWeight: "bold" }}>もう一度このケースで練習</button>}
+            <button onClick={() => navigate(`/history?case=${caseId}`)} style={{ ...btn, background: "#eff6ff", border: "1px solid #bfdbfe", color: "#1d4ed8" }}>📈 推移を見る</button>
+            <button onClick={share} disabled={shareState === "working"} style={{ ...btn, background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#15803d" }}>
+              {shareState === "working" ? "リンク作成中…" : shareState === "copied" ? "✅ リンクをコピーしました" : "🔗 共有リンク"}
+            </button>
+            <button onClick={() => navigate("/scenario")} style={btn}>ケース一覧へ</button>
+            {!isMobile && <button onClick={() => window.print()} style={btn}>PDFで保存</button>}
+          </div>
+        )}
+        {shareState === "shown" && shareUrl && (
+          <div style={{ ...card, fontSize: 13, wordBreak: "break-all" }}>このリンクを相手に送ってください（ログイン不要で見られます）：<br /><a href={shareUrl}>{shareUrl}</a></div>
+        )}
+        {shareState === "error" && <div style={{ background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 10, padding: "10px 14px", marginBottom: 12, fontSize: 13, color: "#b91c1c" }}>共有リンクを作成できませんでした。履歴から開き直してお試しください。</div>}
+        {shareMode && (
+          <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: "#1e3a8a" }}>
+            このレポートは共有リンクで表示されています。ご自身でも練習したい方は <a href="/" style={{ color: "#1d4ed8", fontWeight: "bold" }}>Career Counselor AI</a> をご覧ください。
+          </div>
+        )}
 
         {/* タブ */}
         <div style={{ display: "flex", gap: 5, marginBottom: 14, flexWrap: "wrap" }}>
@@ -159,6 +203,12 @@ export default function Result() {
         {/* 評価スコア */}
         {tab === "score" && (
           <div style={card}>
+            {score.caseSummary && (
+              <div style={{ background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 10, padding: "12px 14px", marginBottom: 18, fontSize: 13, color: "#374151", lineHeight: 1.8 }}>
+                <div style={{ fontWeight: "bold", color: "#1e3a8a", marginBottom: 4 }}>相談内容（AIによる要約）</div>
+                {score.caseSummary}
+              </div>
+            )}
             <div style={{ fontSize: 15, fontWeight: 700, color: "#1e3a8a", marginBottom: 4 }}>評価区分別スコア</div>
             <div style={{ fontSize: 12, color: "#888", marginBottom: 20 }}>合格基準：各区分{PASS}点以上</div>
             {CATEGORIES.map((c) => {
@@ -226,6 +276,60 @@ export default function Result() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* 口頭試問 */}
+        {tab === "oral" && score.oral && (
+          <div>
+            {(() => {
+              const evals = score.oral.eval || [];
+              const allOk = evals.length > 0 && evals.every((e) => e.grade === "○");
+              return evals.length > 0 && (
+                <div style={{ background: allOk ? "#e8f5e9" : "#e8eaf6", borderRadius: 10, padding: "10px 16px", marginBottom: 14, fontSize: 13, color: allOk ? "#1b5e20" : "#1e3a8a", fontWeight: 600 }}>
+                  {allOk ? "✅ 口頭試問はすべて○評価です" : `口頭試問：${evals.filter((e) => e.grade === "○").length}／${evals.length} 問が○評価`}
+                </div>
+              );
+            })()}
+            {(() => {
+              let qIdx = -1;
+              return (score.oral.transcript || []).map((line, i) => {
+                const isExaminer = line.speaker === "試験官";
+                if (isExaminer) qIdx += 1;
+                const ev = !isExaminer ? (score.oral.eval || [])[qIdx] : null;
+                const gs = ev ? GRADE_STYLE[ev.grade] || GRADE_STYLE["△"] : null;
+                return (
+                  <div key={i} style={{ marginBottom: 12 }}>
+                    <div style={{ display: "flex", flexDirection: isExaminer ? "row" : "row-reverse", gap: 8, alignItems: "flex-start" }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: isExaminer ? "#37474f" : "#1e3a8a", background: isExaminer ? "#eceff1" : "#e8eaf6", borderRadius: 6, padding: "4px 7px", minWidth: 52, textAlign: "center", marginTop: 2, flexShrink: 0 }}>
+                        {line.speaker}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ background: isExaminer ? "#f5f5f5" : "#fff", border: `1px solid ${isExaminer ? "#e0e0e0" : "#9fa8da"}`, borderRadius: 8, padding: "10px 14px", fontSize: 13.5, lineHeight: 1.75, color: "#333", whiteSpace: "pre-wrap" }}>
+                          {line.text}
+                        </div>
+                        {ev && (
+                          <div style={{ marginTop: 5 }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 4, background: gs.bg, color: gs.text }}>{ev.grade} {ev.comment}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+            {(score.oral.eval || []).some((e) => e.better) && (
+              <div style={{ ...card, marginTop: 16 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#1e3a8a", marginBottom: 14 }}>◎ さらに上を目指す回答の方向性</div>
+                {(score.oral.eval || []).map((e, i) => e.better && (
+                  <div key={i} style={{ marginBottom: 14, borderBottom: "1px solid #e8eaf6", paddingBottom: 14 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#2563eb", marginBottom: 6 }}>Q{i + 1}：{e.q}</div>
+                    <div style={{ background: "#e8eaf6", borderRadius: 8, padding: "8px 12px", fontSize: 12.5, color: "#444", lineHeight: 1.8 }}>{e.better}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -304,4 +408,26 @@ export default function Result() {
       </div>
     </div>
   );
+}
+
+export default function Result() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => { if (!location.state) navigate("/"); }, [location.state, navigate]);
+  if (!location.state) return null;
+
+  const { messages = [], caseId = "unknown", createdAt, score } = location.state;
+  const resultId = location.state.resultId || score?.resultId || null;
+
+  if (!score?.summary) {
+    return (
+      <div style={{ padding: 40, textAlign: "center" }}>
+        <h2>採点結果を読み込めませんでした</h2>
+        <button onClick={() => navigate("/scenario")} style={{ marginTop: 12, padding: "10px 20px", borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer" }}>ケース一覧へ</button>
+      </div>
+    );
+  }
+
+  return <ReportView score={score} messages={messages} caseId={caseId} createdAt={createdAt} resultId={resultId} />;
 }

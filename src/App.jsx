@@ -15,11 +15,13 @@ import ProfileSetup from "./pages/ProfileSetup";
 import ProfileEdit from "./pages/ProfileEdit";
 import ManageSubscription from "./pages/ManageSubscription";
 import History from "./pages/History";
+import Record from "./pages/Record";
+import Share from "./pages/Share";
 import Header from "./components/Header";
 import { supabase } from "./lib/supabase";
 
 // ログイン不要で見られるページ
-const PUBLIC_PATHS = ["/", "/legal", "/privacy", "/terms", "/payment", "/payment-success", "/reset-password"];
+const PUBLIC_PATHS = ["/", "/legal", "/privacy", "/terms", "/payment", "/payment-success", "/reset-password", "/share"];
 
 export default function App() {
   const [session, setSession] = useState(undefined);
@@ -152,7 +154,7 @@ export default function App() {
   }
 
   // ログイン済みだが未払いの場合、アプリページへのアクセスは支払いページへ
-  const appPaths = ["/scenario", "/roleplay", "/result", "/history"];
+  const appPaths = ["/scenario", "/roleplay", "/result", "/history", "/record"];
   const isAppPath = appPaths.includes(location.pathname);
   if (session && !isSubscribed && isAppPath) {
     return <Navigate to="/payment" />;
@@ -180,6 +182,7 @@ export default function App() {
         <Route path="/payment" element={<Payment />} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/share" element={<Share />} />
 
         {/* ログイン＋サブスクリプション必須ページ */}
         <Route path="/scenario" element={session ? <Scenario username={profile?.username} loginStreak={profile?.login_streak} /> : <Login />} />
@@ -188,6 +191,7 @@ export default function App() {
         <Route path="/roleplay" element={session ? <RolePlay /> : <Login />} />
         <Route path="/result" element={session ? <Result /> : <Login />} />
         <Route path="/history" element={session ? <History /> : <Login />} />
+        <Route path="/record" element={session ? <Record /> : <Login />} />
 
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

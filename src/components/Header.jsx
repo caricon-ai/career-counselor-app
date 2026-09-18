@@ -79,6 +79,20 @@ export default function Header({ rightContent, session, username }) {
         {session && (
           <>
             <button
+              onClick={() => navigate("/record")}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "#fca5a5",
+                fontSize: 13,
+                cursor: "pointer",
+                padding: "6px 4px",
+                fontWeight: "bold",
+              }}
+            >
+              🎙 録音
+            </button>
+            <button
               onClick={() => navigate("/history")}
               style={{
                 background: "transparent",
